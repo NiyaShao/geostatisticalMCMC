@@ -65,7 +65,17 @@ endResults = crf_chain(argument A, B, C,...... F)
 
 or 
 
-crf_chain.init()
+chain_crf.init(.....)
+
+chain_crf.set_update_type()
+chain_crf.set_high_vel_region()
+chain_crf.set_update_in_region()
+
+chain_crf.set_loss_type()
+
+chain_crf.run(iter=xx,savefile=True)
+
+
 crf_chain.A = inputA
 crf_chain.B = inputB
 crf_chain.C = inputC
