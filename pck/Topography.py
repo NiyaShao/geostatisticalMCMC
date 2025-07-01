@@ -49,10 +49,10 @@ Returns:
     smb (2D array of floats): the interpolated annual average SMB for year 'smb_time'
     fig: figure of interpolated SMB and uninterpolated original data
 """
-def load_smb_racmo(dataset_path,xx,yy,smb_time=2015,interp_method='linear',k=1):
+def load_smb_racmo(dataset_path,xx,yy,time=2015,interp_method='linear',k=1):
     # check if smb_time is in the range
-    if (smb_time > 2016) or (smb_time < 1979):
-        raise ValueError("invalid value for smb_time variable")
+    if (time > 2016) or (time < 1979):
+        raise ValueError("invalid value for time variable")
     
     try:
         ds = xr.open_dataset(dataset_path)
@@ -72,7 +72,7 @@ def load_smb_racmo(dataset_path,xx,yy,smb_time=2015,interp_method='linear',k=1):
     ix = xx2[msk]
     iy = yy2[msk]
     max_time = 2016
-    time_int = int(smb_time - max_time - 1)
+    time_int = int(time - max_time - 1)
     iz = ds.isel(time=time_int)['smb'].values.squeeze()[msk]
     
     # assume unit is water equivalent mm / yr, correct units to m/yr
@@ -217,7 +217,6 @@ Returns:
     vely (2D numpy array of floats): the interpolated veloxity in y direction
     velx_err (2D numpy array of floats): the interpolated veloxity error in x direction
     vely_err (2D numpy array of floats): the interpolated veloxity error in xy direction
-    TODO: to be tested?
 """
 def load_vel_measures(dataset_path,xx,yy,interp_method='linear',k=1):
     ds2 = xr.open_dataset(dataset_path)
@@ -245,7 +244,7 @@ def load_vel_measures(dataset_path,xx,yy,interp_method='linear',k=1):
     
     ds = [velx, vely, velx_err, vely_err]
     titles = ['velocity in x-direction', 'velocity in y-direction', 'the error in velocity in x-direction', 'the error in velocity in y-direction']
-    fig, axs = plt.subplots(3, 2, figsize=(10.5,7), sharey=True, sharex=True,
+    fig, axs = plt.subplots(2, 2, figsize=(10.5,7), sharey=True, sharex=True,
                            gridspec_kw={'wspace':-0.01})
     
     for ax, d, t in zip(axs.ravel(), ds, titles):
@@ -254,68 +253,7 @@ def load_vel_measures(dataset_path,xx,yy,interp_method='linear',k=1):
         ax.axis('scaled')
         plt.colorbar(im, ax=ax, pad=0.03, aspect=40)
     plt.close()
-    
-# =============================================================================
-#     velx_err = velx_err_raw.flatten()
-#     if interp_method == 'spline':
-#         interp = vd.Spline()
-#     elif interp_method == 'linear':
-#         interp = vd.Linear()
-#     elif interp_method == 'kneighbors':
-#         interp = vd.KNeighbors(k=k)
-#     else:
-#         print('the interpolation method input is not correctly defined, exit the function')
-#         return 0,0
-#     interp.fit(coordinates, velx_err)
-#     velx_err = interp.predict((xx.flatten(), yy.flatten()))
-#     velx_err = velx_err.reshape(xx.shape)
-#     
-#     vely_err = vely_err_raw.flatten()
-#     if interp_method == 'spline':
-#         interp = vd.Spline()
-#     elif interp_method == 'linear':
-#         interp = vd.Linear()
-#     elif interp_method == 'kneighbors':
-#         interp = vd.KNeighbors(k=k)
-#     else:
-#         print('the interpolation method input is not correctly defined, exit the function')
-#         return 0,0
-#     interp.fit(coordinates, vely_err)
-#     vely_err = interp.predict((xx.flatten(), yy.flatten()))
-#     vely_err = vely_err.reshape(xx.shape)
-#     
-#     velx_raw = ds2['VX'].values
-#     vely_raw = ds2['VY'].values
-#     
-#     velx = velx_raw.flatten()
-#     if interp_method == 'spline':
-#         interp = vd.Spline()
-#     elif interp_method == 'linear':
-#         interp = vd.Linear()
-#     elif interp_method == 'kneighbors':
-#         interp = vd.KNeighbors(k=k)
-#     else:
-#         print('the interpolation method input is not correctly defined, exit the function')
-#         return 0,0
-#     interp.fit(coordinates, velx)
-#     velx = interp.predict((xx.flatten(), yy.flatten()))
-#     velx = velx.reshape(xx.shape)
-#     
-#     vely = vely_raw.flatten()
-#     if interp_method == 'spline':
-#         interp = vd.Spline()
-#     elif interp_method == 'linear':
-#         interp = vd.Linear()
-#     elif interp_method == 'kneighbors':
-#         interp = vd.KNeighbors(k=k)
-#     else:
-#         print('the interpolation method input is not correctly defined, exit the function')
-#         return 0,0
-#     interp.fit(coordinates, vely)
-#     vely = interp.predict((xx.flatten(), yy.flatten()))
-#     vely = vely.reshape(xx.shape)
-# =============================================================================
-    
+       
     return velx, vely, velx_err, vely_err, fig
 
 
@@ -328,9 +266,12 @@ Args:
     interp_method (str): The interpolation methods, can choose from 'spline', 'linear', or 'kneighbors'. Details please check python package 'verde'
     k (int): Should only be used when interp_method = 'kneighbors', where k define number of neighbors
 Returns:
-     (2D numpy array of floats): the interpolated veloxity in x direction
-     (2D numpy array of floats): the interpolated veloxity in y direction
-    TODO: rewrite the function discription
+    bm_mask (2D numpy array of floats): the mask in BedMachine, recording the type of ice (open ocean, ice free, grounded, floating, etc.). Details see BedMachine document. Interpolated using nearest neighbor interpolation
+    bm_source (2D numpy array of floats): the source method used for BedMachine, recording the type of ice (open ocean, ice free, grounded, floating, etc.). Details see BedMachine document. Interpolated using nearest neighbor interpolation
+    bm_bed (2D numpy array of floats): the interpolated BedMachine bed elevation.
+    bm_surface (2D numpy array of floats): the interpolated BedMachien ice surface elevation.
+    bm_errbed (2D numpy array of floats): the interpolated BedMachine bed error.
+    fig: visualization of the interpolated data
     TODO: to be tested?
 """
 
@@ -348,19 +289,19 @@ def load_bedmachine(dataset_path,xx,yy,interp_method='linear',k=1):
     
     print('NOTICE! The categorical data in bedmachine will automatically be interpolated using nearest neighbor interpolation method')
     
-    bm_mask = _interpolate('kneighbors', xx2.flatten(), yy2.flatten(), bm_mask, xx.flatten(), yy.flatten(), k)
+    bm_mask = _interpolate('kneighbors', xx2.flatten(), yy2.flatten(), bm_mask.flatten(), xx.flatten(), yy.flatten(), k)
     bm_mask = bm_mask.reshape(xx.shape)
 
-    bm_source = _interpolate('kneighbors', xx2.flatten(), yy2.flatten(), bm_source, xx.flatten(), yy.flatten(), k)
+    bm_source = _interpolate('kneighbors', xx2.flatten(), yy2.flatten(), bm_source.flatten(), xx.flatten(), yy.flatten(), k)
     bm_source = bm_source.reshape(xx.shape)
     
-    bm_bed = _interpolate(interp_method, xx2.flatten(), yy2.flatten(), bm_bed, xx.flatten(), yy.flatten(), k)
+    bm_bed = _interpolate(interp_method, xx2.flatten(), yy2.flatten(), bm_bed.flatten(), xx.flatten(), yy.flatten(), k)
     bm_bed = bm_bed.reshape(xx.shape)
     
-    bm_surface = _interpolate(interp_method, xx2.flatten(), yy2.flatten(), bm_surface, xx.flatten(), yy.flatten(), k)
+    bm_surface = _interpolate(interp_method, xx2.flatten(), yy2.flatten(), bm_surface.flatten(), xx.flatten(), yy.flatten(), k)
     bm_surface = bm_surface.reshape(xx.shape)
     
-    bm_errbed = _interpolate(interp_method, xx2.flatten(), yy2.flatten(), bm_errbed, xx.flatten(), yy.flatten(), k)
+    bm_errbed = _interpolate(interp_method, xx2.flatten(), yy2.flatten(), bm_errbed.flatten(), xx.flatten(), yy.flatten(), k)
     bm_errbed = bm_errbed.reshape(xx.shape)
     
     ds = [bm_mask, bm_source, bm_bed, bm_surface, bm_errbed]
@@ -370,7 +311,7 @@ def load_bedmachine(dataset_path,xx,yy,interp_method='linear',k=1):
                            gridspec_kw={'wspace':-0.01})
     
     for ax, d, t in zip(axs.ravel(), ds, titles):
-        im = ax.pcolormesh(xx, yy, d.values.reshape(xx.shape))
+        im = ax.pcolormesh(xx, yy, d)
         ax.set_title(t)
         ax.axis('scaled')
         plt.colorbar(im, ax=ax, pad=0.03, aspect=40)
@@ -404,7 +345,7 @@ Returns:
     TODO: test
 """
 # TODO: geoid correction
-def load_radar(folder_path, xx, yy, output_csv, include_only_thickness_data = False):
+def load_radar(folder_path, output_csv, include_only_thickness_data = False):
 # =============================================================================
 #     
 #     filename_list_b3 = os.listdir(bedmap3_folder_path)
@@ -507,8 +448,8 @@ def load_radar(folder_path, xx, yy, output_csv, include_only_thickness_data = Fa
     df['x'] = x.tolist()
     df['y'] = y.tolist()
     
-    df_bedmap3 = df[df['file'].str[-7:-4] == 'BM3']
-    df_bedmap2 = df[df['file'].str[-7:-4] == 'BM2']
+    df_bedmap3 = df[df['file'].str[-7:-4] == 'BM3'].copy()
+    df_bedmap2 = df[df['file'].str[-7:-4] == 'BM2'].copy()
     
     
 # This shouldnt be used because how it will assume surface elevation is known
@@ -543,7 +484,7 @@ def load_radar(folder_path, xx, yy, output_csv, include_only_thickness_data = Fa
     del df['along_track_distance (m)']
     del df['land_ice_thickness (m)']
     del df['index']
-    print(df.shape)
+    print('There are in total', df.shape[0], 'datapoints')
     
     df.to_csv(output_csv,index=False, header=True)
     print('output csv file saved as ', output_csv)
@@ -584,7 +525,7 @@ def load_radar(folder_path, xx, yy, output_csv, include_only_thickness_data = Fa
     df_sparse3 = df_out[df_out.index % 10 == 1]
     df_sparse4 = df[df.index % 10 == 1]
     
-    ds = [df_sparse1['bedrock_altitude (m)'], df_sparse2['bedrock_altitude (m)'], df_sparse3['bedrock_altitude (m)'], df_sparse4['bedrock_altitude (m)']]
+    ds = [df_sparse1['bedrock_altitude (m)'], df_sparse2['bedrock_altitude (m)'], df_sparse3['bedrock_altitude (m)'], df_sparse4['bed']]
     xs = [df_sparse1['x'],df_sparse2['x'],df_sparse3['x'],df_sparse4['x']]
     ys = [df_sparse1['y'],df_sparse2['y'],df_sparse3['y'],df_sparse4['y']]
     titles = ['bedmap3', 'bedmap2', 'the excluded measurements', 'the final bed elevation']
@@ -601,7 +542,7 @@ def load_radar(folder_path, xx, yy, output_csv, include_only_thickness_data = Fa
     
     return df, df_out, fig
 
-# TODO
+# TODO: method title
 # the method is adopted from GStatSim python package
 def grid_data(df, xx, yy, zz, res, xmin, xmax, ymin, ymax):
     
@@ -662,7 +603,7 @@ Returns:
     mask_final: the final high velocity region mask
     TODO: test
 """
-def get_highvel_boundary(velx, vely, velmag_threshold, grounded_ice_mask, ocean_mask, distance_max, xx, yy):
+def get_highvel_boundary(velx, vely, velmag_threshold, grounded_ice_mask, ocean_mask, distance_max, xx, yy, smooth_mode = 10):
     
 # =============================================================================
 #     mask = (grounded_ice_mask) & (np.sqrt(velx**2+vely**2) >= velmag_threshold) #anywhere is grounded and high velocity
@@ -693,7 +634,7 @@ def get_highvel_boundary(velx, vely, velmag_threshold, grounded_ice_mask, ocean_
     mask = mask | ocean_mask #include open ocean and floating ice
 
     image = Image.fromarray((mask * 255).astype(np.uint8))
-    image = image.filter(ImageFilter.ModeFilter(size=10)) #smooth the 'edge' such that the region have clear border
+    image = image.filter(ImageFilter.ModeFilter(size=smooth_mode)) #smooth the 'edge' such that the region have clear border
     mask_mat = np.array(np.array(image)/255,dtype=int)
     
     #the following code 'expand' the region outward for 'distance_max' length
@@ -701,8 +642,8 @@ def get_highvel_boundary(velx, vely, velmag_threshold, grounded_ice_mask, ocean_
     # when outside of high velocity, grounded ice region, the xx_hard or yy_hard is np.nan;
     # when inside, the xx_hard or yy_hard is its coordinates on the map
     mask_dist = np.zeros(xx.shape)
-    xx_hard = np.where((mask_mat==0)&(grounded_ice_mask==1), np.nan, xx) 
-    yy_hard = np.where((mask_mat==0)&(grounded_ice_mask==1), np.nan, yy)
+    xx_hard = np.where((mask_mat==1)&(grounded_ice_mask==1), xx, np.nan) 
+    yy_hard = np.where((mask_mat==1)&(grounded_ice_mask==1), yy, np.nan)
 
     # for every location, find its distance to the cloest points that is inside the mask_mat>0 region
     for i in range(xx.shape[0]):

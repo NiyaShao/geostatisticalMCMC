@@ -19,65 +19,6 @@ from skgstat import models
 
 import Topography
 
-def exclude_data_rf(df_in, rf_bed, cond_bed, num_of_std, xx, yy, shallow, dfmaskname = 'bedmachine_mask'):
-    
-    df = df_in.copy()
-    
-    # plot the radar difference, give std
-    fig = plt.figure(figsize=(8,6*3))
-    gs = fig.add_gridspec(3,1,height_ratios = [2,1,1])
-    ax1 = fig.add_subplot(gs[0, 0])
-    ax2 = fig.add_subplot(gs[1, 0])
-    ax3 = fig.add_subplot(gs[2, 0])
-    
-    rfradardiff = rf_bed - cond_bed
-    stdrf = np.std(rfradardiff[~np.isnan(rfradardiff)])
-    
-    print('the standard deviation of difference to conditioning data is', stdrf)
-    
-    fig_bed = ax1.pcolormesh(xx/1000,yy/1000,rf_bed,cmap='gist_earth',vmin=-2500,vmax=2000)
-    fig_diff = ax1.pcolormesh(xx/1000, yy/1000,rfradardiff,vmin=-1000, vmax=1000,cmap='RdBu')
-    plt.colorbar(fig_bed,ax=ax1, aspect=40, label='m',orientation='horizontal')
-    plt.colorbar(fig_diff,ax=ax1, aspect=40, label='m',orientation='horizontal')
-    ax1.set_xlabel('X [km]')
-    ax1.set_ylabel('Y [km]')
-    ax1.set_title('final topography minus radar data')
-    ax1.axis('scaled')
-    
-    ax3.pcolormesh(xx/1000, yy/1000,  (rfradardiff<stdrf*num_of_std)&(rfradardiff>-stdrf*num_of_std), cmap='YlGn')
-    ax3.set_xlabel('X [km]')
-    ax3.set_ylabel('Y [km]')
-    ax3.set_title('if exclude positive and negative radardiff')
-    ax3.axis('scaled')
-
-    ax2.pcolormesh(xx/1000, yy/1000,  (rfradardiff>-stdrf*num_of_std), cmap='RdPu')
-    ax2.set_xlabel('X [km]')
-    ax2.set_ylabel('Y [km]')
-    ax2.set_title('if only exclude negative radardiff (bed<rf)')
-    ax2.axis('scaled')
-    
-    #exclude data
-    df['bedQCrf'] = [np.nan]*df.shape[0]
-    df['bedrf'] = rf_bed.flatten()
-    num_excluded_data = 0
-    for index, row in df.iterrows():
-        if ((row[dfmaskname] == 3) | (row[dfmaskname] == 0)): #if in ice shelf
-            df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        # elif (row['bedmachine_mask'] == 0): #or sea floor
-        #     df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        elif pd.isna(row['bed']):
-            continue
-        elif (row['bed'] < row['bedrf'] + stdrf*num_of_std) and (row['bed'] > row['bedrf'] - stdrf*num_of_std) and (~shallow):
-            df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        elif (row['bed'] < row['bedrf'] + stdrf*1.5) and (shallow):
-            df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        else:
-            num_excluded_data += 1
-            
-    print('the exclusion rate is',num_excluded_data / df[df['bed'].isnull()==False].shape[0])
-            
-    return df
-
 def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, samples=0.6, subsample=100000, data_for_trans = []):
 
     if len(data_for_trans)==0:
@@ -162,9 +103,8 @@ class RandField:
 
         return pairs, edge_masks
     
-    def __init__(self,block_sizes,range_max_x,range_max_y,range_min_x,range_min_y,step_min,step_max,nugget_max,random_field_model,isotropic,rng=np.random.default_rng()):
+    def __init__(self,range_max_x,range_max_y,range_min_x,range_min_y,step_min,step_max,nugget_max,random_field_model,isotropic,max_dist,rng=np.random.default_rng()):
         
-        self.block_sizes
         self.range_max_x = range_max_x
         self.range_max_y = range_max_y
         self.range_min_x = range_min_x
@@ -174,8 +114,10 @@ class RandField:
         self.nugget_max = nugget_max
         self.random_field_model = random_field_model
         self.isotropic = isotropic
+        self.max_dist = max_dist
         self.rng = rng
            
+    # need to print a message as a reminder for both set function
     def set_block_sizes(self,min_block_x,max_block_x,min_block_y,max_block_y,steps=5):
         self.min_block_x = min_block_x
         self.min_block_y = min_block_y
@@ -279,8 +221,9 @@ class RandField:
     def logistic(x, L, x0, k):
         return L/(1+np.exp(-k*(x-x0)))
 
-    def get_crf_weight(self,xx,yy,cond_data_mask,max_dist):
+    def get_crf_weight(self,xx,yy,cond_data_mask):
         logistic_param = self.logistic_param
+        max_dist = self.max_dist
         dist = RandField.min_dist(np.where(cond_data_mask==0, np.nan, 1), xx, yy)
         dist_rescale = RandField.rescale(dist, max_dist)
         dist_logi = RandField.logistic(dist_rescale, logistic_param[0], logistic_param[1], logistic_param[2]) - logistic_param[3]
@@ -288,7 +231,9 @@ class RandField:
         weight = dist_logi - np.min(dist_logi)
         return weight, dist, dist_rescale, dist_logi
 
-    def get_crf_weight_from_dist(xx,yy,logistic_param,cond_data_mask,max_dist,dist):
+    def get_crf_weight_from_dist(self,xx,yy,cond_data_mask,dist):
+        logistic_param = self.logistic_param
+        max_dist = self.max_dist
         dist_rescale = RandField.rescale(dist, max_dist)
         dist_logi = RandField.logistic(dist_rescale, logistic_param[0], logistic_param[1], logistic_param[2]) - logistic_param[3]
 
@@ -443,6 +388,7 @@ class chain_crf(chain):
         print('then please set up the loss function using either chainname.set_loss_type or chainname.set_loss_func')
         return
     
+    # TODO What is this RFparam used for?, this functionality is not implemented yet
     def set_update_type(self, block_type, block_size, RFparam):
         
         if block_type == 'rbf_CRF':
@@ -460,6 +406,11 @@ class chain_crf(chain):
         
         return
     
+    def set_crf_data_weight(self, RF):
+        
+        crf_weight, dist, dist_rescale, dist_logi = RF.get_crf_weight(self.xx,self.yy,self.data_mask)
+        self.crf_data_weight = crf_weight
+
         
     def run(self, n_iter, RF, rng=np.random.default_rng()):
             
@@ -477,7 +428,7 @@ class chain_crf(chain):
         blocks_cache = np.full((n_iter, 4), np.nan)
         resampled_times = np.zeros(self.xx.shape)
         
-        # should i have an additional property called initial_bed?
+        # TODO: should i have an additional property called initial_bed?
         bed_c = self.bed
         
         # initialize loss
@@ -491,8 +442,11 @@ class chain_crf(chain):
         step_cache[0] = False
         bed_cache[0] = bed_c
         
-        # TODO, this should be stored inside the chain instead of generate it every time
-        crf_weight, dist, dist_rescale, dist_logi = RF.get_crf_weight(self.xx,self.yy,self.data_mask,max_dist=RF.max_dist)
+# =============================================================================
+#         crf_weight, dist, dist_rescale, dist_logi = RF.get_crf_weight(self.xx,self.yy,self.data_mask,max_dist=RF.max_dist)
+# 
+# =============================================================================
+        crf_weight = self.crf_weight
 
         for i in range(1,n_iter):
                         
@@ -527,7 +481,7 @@ class chain_crf(chain):
             
             #perturb
             if self.block_type == 'CRF_logi':
-                perturb = f[mxmin:mxmax,mymin:mymax]*self.crf_weight[bxmin:bxmax,bymin:bymax]
+                perturb = f[mxmin:mxmax,mymin:mymax]*crf_weight[bxmin:bxmax,bymin:bymax]
             else:
                 perturb = f[mxmin:mxmax,mymin:mymax]
 
@@ -580,23 +534,6 @@ class chain_crf(chain):
 
         return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
 
-    
-    
-    
-### Geostatistics
-
-def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, samples=0.6, subsample=100000, data_for_trans = []):
-
-    if len(data_for_trans)==0:
-        nst_trans = QuantileTransformer(n_quantiles=500, output_distribution="normal",random_state=0,subsample=subsample).fit(data)
-    else:
-        nst_trans = QuantileTransformer(n_quantiles=500, output_distribution="normal",random_state=0,subsample=subsample).fit(data_for_trans)
-        
-    transformed_data = nst_trans.transform(data)
-    
-    coords = coords[roughness_region_mask==1]
-    values = transformed_data[roughness_region_mask==1].flatten()
-
 
 #should be the parameter of the chain's class
 #xx, yy
@@ -641,10 +578,16 @@ class chain_sgs(chain):
         
     def set_normal_transformation(self, nst_trans):
         self.nst_trans = nst_trans
-
-    # TODO, make it an option to detrend or not        
-    def set_trend(self, simulate_detrended_map, trend):
-        self.trend = trend
+      
+    def set_trend(self, trend, detrend_map = True):
+        if detrend_map == True:
+            if len(trend)!=len(self.xx) or trend.shape!=self.xx.shape:
+                raise ValueError('if detrend_map is set to True, then the trend of the topography, which is a 2D numpy array, must be provided')
+            else:
+                self.trend = trend
+        else:
+            self.trend = None
+        self.detrend_map = detrend_map
     
     def set_variogram(self, vario_type, vario_range, vario_sill, vario_nugget, isotropic = True, vario_smoothness = None, vario_azimuth = None):
         
@@ -698,14 +641,10 @@ class chain_sgs(chain):
         
         # TODO, should i have an additional property called initial_bed?
         bed_c = self.bed
-        
-        # TODO, when should I input in trend
+
         trend = self.trend
-        
-        # TODO, nst_trans
         nst_trans = self.nst_trans
         
-        # z = bed_c.flatten()
         z = nst_trans.inverse_transform(bed_c.reshape(-1,1)).reshape(rows,cols) + trend
         
         resolution = self.resolution
