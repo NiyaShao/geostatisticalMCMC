@@ -67,8 +67,10 @@ def load_smb_racmo(dataset_path,xx,yy,time=2015,interp_method='linear',k=1):
     lonlon, latlat = np.meshgrid(ds.rlon.values, ds.rlat.values)
     xx2, yy2 = transformer.transform(lonlon, latlat)
     
+    res = np.abs(xx[1,1] - xx[0,0])
+    
     # restrict the domain of interpolation
-    msk = (xx2 > xx.min()) & (xx2 < xx.max()) & (yy2 > yy.min()) & (yy2 < yy.max())
+    msk = (xx2 > xx.min() - res*5) & (xx2 < xx.max() +  res*5) & (yy2 > yy.min() - res*5) & (yy2 < yy.max() + res*5)
     ix = xx2[msk]
     iy = yy2[msk]
     max_time = 2016
@@ -80,21 +82,6 @@ def load_smb_racmo(dataset_path,xx,yy,time=2015,interp_method='linear',k=1):
     
     preds_smb = _interpolate(interp_method, ix, iy, iz, xx.flatten(), yy.flatten(), k)
 
-# =============================================================================
-#     # interpolate
-#     if interp_method == 'spline':
-#         interp = vd.Spline()
-#     elif interp_method == 'linear':
-#         interp = vd.Linear()
-#     elif interp_method == 'kneighbors':
-#         interp = vd.KNeighbors(k=k)
-#     else:
-#         raise ValueError('the interp_method is not correctly defined, exit the function')
-#     
-#     interp.fit((ix, iy), iz)
-#     preds_smb = interp.predict((xx.flatten(), yy.flatten()))
-# =============================================================================
-    
     preds_smb = preds_smb.reshape(xx.shape)
 
     # plot results
@@ -120,7 +107,6 @@ def load_smb_racmo(dataset_path,xx,yy,time=2015,interp_method='linear',k=1):
     return preds_smb, fig
 
 
-#load dhdt to dataframe
 """load surface elevation change data from https://nsidc.org/data/nsidc-0782/versions/1
 
 Args:
@@ -143,7 +129,9 @@ def load_dhdt(dataset_path,xx,yy,interp_method='linear',k=1,begin_year=2014,mont
     except FileNotFoundError:
         print("Error: File not found at path: ", dataset_path)
         
-    ds2 = ds2.sel(x=(ds2.x > xx.min()) & (ds2.x < xx.max()), y=(ds2.y > yy.min()) & (ds2.y < yy.max()))
+    res = np.abs(xx[1,1] - xx[0,0])
+        
+    ds2 = ds2.sel(x=(ds2.x > xx.min() - res*5) & (ds2.x < xx.max() + res*5), y=(ds2.y > yy.min() - res*5) & (ds2.y < yy.max() + res*5))
 
     if month < 1 or month > 11:
         raise ValueError()
@@ -163,28 +151,8 @@ def load_dhdt(dataset_path,xx,yy,interp_method='linear',k=1,begin_year=2014,mont
 
     xx2, yy2 = np.meshgrid(ds2.x.values, ds2.y.values)
     
-    
     preds_h = _interpolate(interp_method, xx2.flatten(), yy2.flatten(), dhdt.flatten(), xx.flatten(), yy.flatten(), k)
-# =============================================================================
-#     coordinates = (
-#         xx2.flatten(),
-#         yy2.flatten()
-#     )
-#     data = dhdt.flatten()
-#
-#     # interpolate
-#     if interp_method == 'spline':
-#         interp = vd.Spline()
-#     elif interp_method == 'linear':
-#         interp = vd.Linear()
-#     elif interp_method == 'kneighbors':
-#         interp = vd.KNeighbors(k=k)
-#     else:
-#         raise ValueError('the interp_method is not correctly defined, exit the function')
-#     
-#     interp.fit(coordinates, data)
-#     preds_h = interp.predict((xx.flatten(), yy.flatten()))
-# =============================================================================
+
     preds_h = preds_h.reshape(xx.shape)
     
     v_max = np.nanmax(dhdt)
@@ -220,13 +188,12 @@ Returns:
 """
 def load_vel_measures(dataset_path,xx,yy,interp_method='linear',k=1):
     ds2 = xr.open_dataset(dataset_path)
-    ds2 = ds2.sel(x=(ds2.x > xx.min()) & (ds2.x < xx.max()), y=(ds2.y > yy.min()) & (ds2.y < yy.max()))
+    
+    res = np.abs(xx[0,0] - xx[1,1])
+    
+    ds2 = ds2.sel(x=(ds2.x > xx.min() -  res*5) & (ds2.x < xx.max() + res*5), y=(ds2.y > yy.min() -  res*5) & (ds2.y < yy.max() + res*5))
     
     xx2, yy2 = np.meshgrid(ds2.x.values, ds2.y.values)
-#    coordinates = (
-#        xx2.flatten(),
-#        yy2.flatten()
-#    )
     
     velx_err_raw = ds2['ERRX'].values
     vely_err_raw = ds2['ERRY'].values
@@ -272,12 +239,12 @@ Returns:
     bm_surface (2D numpy array of floats): the interpolated BedMachien ice surface elevation.
     bm_errbed (2D numpy array of floats): the interpolated BedMachine bed error.
     fig: visualization of the interpolated data
-    TODO: to be tested?
 """
 
 def load_bedmachine(dataset_path,xx,yy,interp_method='linear',k=1):
     dsbm = xr.open_dataset(dataset_path)
-    dsbm = dsbm.sel(x=(dsbm.x > xx.min()) & (dsbm.x < xx.max()), y=(dsbm.y > yy.min()) & (dsbm.y < yy.max()))
+    res = np.abs(xx[0,0] - xx[1,1])
+    dsbm = dsbm.sel(x=(dsbm.x > xx.min() - res*5) & (dsbm.x < xx.max() + res*5), y=(dsbm.y > yy.min() - res*5) & (dsbm.y < yy.max() + res*5))
     
     bm_mask = dsbm['mask'].values
     bm_source = dsbm['source'].values
@@ -342,77 +309,10 @@ Returns:
     df (pandas dataframe): the dataframe that contains the bed elevation measurements that are included, based on parameter include_only_thickness_data
     df_out (pandas dataframe): the dataframe that are excluded from the df
     fig: figure as a overview of the dataset
-    TODO: test
 """
 # TODO: geoid correction
 def load_radar(folder_path, output_csv, include_only_thickness_data = False):
-# =============================================================================
-#     
-#     filename_list_b3 = os.listdir(bedmap3_folder_path)
-#     df_list_b3 = [] #a list of dataframe containing radar data, each dataframe contains radar data from one file
-#     mf = open("radar_metadata_bedmap3.txt", "a")
-#     filename_prefix = 'RadarData/bedmap3/'
-#     for filename in filename_list_b3:
-#         
-#         with open(filename_prefix + filename) as fp:
-#             mf.write(filename+'\n')
-#             
-#             reader = csv.reader(fp)
-#             for j in range(18):
-#                 headers = next(reader)        # The header row is now consumed
-#                 mf.write('\t'.join(headers) + '\n')
-#     
-#         df = pd.read_csv(filename_prefix+filename,skiprows=18)
-#         df['file'] = filename
-#         df_list_b3.append(df)
-#         mf.write('\n')
-#     mf.close()
-#     
-#     print('the following bedmap3 files are loaded: ')
-#     print(filename_list_b3)
-#     print('the metadata for each radar compaign in bedmap3 is saved in radar_metadata_bedmap3.txt')
-#     
-#     filename_list_b2 = os.listdir(bedmap2_folder_path)
-#     df_list_b2 = [] #a list of dataframe containing radar data, each dataframe contains radar data from one file
-#     mf = open("radar_metadata_bedmap2.txt", "a")
-#     filename_prefix = 'RadarData/bedmap2/'
-#     for filename in filename_list_b2:
-#         
-#         with open(filename_prefix + filename) as fp:
-#             mf.write(filename+'\n')
-#             
-#             reader = csv.reader(fp)
-#             for j in range(18):
-#                 headers = next(reader)        # The header row is now consumed
-#                 mf.write('\t'.join(headers) + '\n')
-#     
-#         df = pd.read_csv(filename_prefix+filename,skiprows=18)
-#         df['file'] = filename
-#         df_list_b2.append(df)
-#         mf.write('\n')
-#     mf.close()
-#     
-#     filename_list_b2 = os.listdir(bedmap2_folder_path)
-#     print('the following bedmap2 files are loaded: ')
-#     print(filename_list_b2)
-#     print('the metadata for each radar compaign in bedmap2 is saved in radar_metadata_bedmap2.txt')
-#     
-#     bedmap3 = pd.concat(df_list_b3)
-#     bedmap2 = pd.concat(df_list_b2)
-#     
-#     source_crs = 'epsg:4326'
-#     target_crs = 'epsg:3031'
-#     lonlat_to_xy = Transformer.from_crs(source_crs,target_crs)
-#     
-#     x,y = lonlat_to_xy.transform(bedmap3['latitude (degree_north)'], bedmap3['longitude (degree_east)'])
-#     bedmap3['x'] = x.tolist()
-#     bedmap3['y'] = y.tolist()
-#     
-#     x,y = lonlat_to_xy.transform(bedmap2['latitude (degree_north)'], bedmap2['longitude (degree_east)'])
-#     bedmap2['x'] = x.tolist()
-#     bedmap2['y'] = y.tolist()
-# =============================================================================
-    
+
     if not os.path.isdir(folder_path):
         raise FileNotFoundError('the folder_path provided is not a directory')
     
@@ -420,6 +320,9 @@ def load_radar(folder_path, output_csv, include_only_thickness_data = False):
     df_list = [] #a list of dataframe containing radar data, each dataframe contains radar data from one file
     mf = open(folder_path+"/radar_metadata.txt", "a")
     for filename in filename_list:
+        
+        if filename[-4:] != '.csv':
+            continue
         
         with open(folder_path + '/' + filename) as fp:
             mf.write(filename+'\n')
@@ -450,23 +353,7 @@ def load_radar(folder_path, output_csv, include_only_thickness_data = False):
     
     df_bedmap3 = df[df['file'].str[-7:-4] == 'BM3'].copy()
     df_bedmap2 = df[df['file'].str[-7:-4] == 'BM2'].copy()
-    
-    
-# This shouldnt be used because how it will assume surface elevation is known
-# =============================================================================
-#     # convert thickness to bed elevation where bed elevation is unavailable but ice thickness and surface elevation data are
-#     if include_only_thickness_data:
-#         #find data where they have thickness value but bed elevation is invalid
-#         df2 = df[df['bedrock_altitude (m)'] == -9999].copy()
-#         df2 = df2[df2['land_ice_thickness (m)'] != -9999]
-#         
-#         start_time = time.time()
-#         df2['bed3'] = df2.apply()thickToEle, axis=1, args=(x_axis, y_axis, surface))
-#         end_time = time.time()
-#         print('the thickness conversion cost time ', end_time - start_time, ' secs')
-#         
-# =============================================================================
-        
+       
     df_out = df[df['bedrock_altitude (m)'] == -9999].copy()
     df = df[df['bedrock_altitude (m)'] != -9999]  
     df = df.reset_index()
@@ -491,35 +378,7 @@ def load_radar(folder_path, output_csv, include_only_thickness_data = False):
     
     v_min = np.min(df['bed'].values)
     v_max = np.max(df['bed'].values)
-    
-# =============================================================================
-#     fig, ax = plt.subplots(2, 2, figsize=(11,4), gridspec_kw={'wspace':-0.1})
-#     
-#     df_sparse = df_bedmap3[df_bedmap3.index % 10 == 1]  # Excludes every nth row
-#     im = ax[0,0].scatter(df_sparse['x'],df_sparse['y'], c = df_sparse['bedrock_altitude (m)'], marker=".", s = .5, vmin = v_min, vmax = v_max)
-#     plt.axis('scaled')
-#     cbar = plt.colorbar(im, orientation="vertical")
-#     ax[0,0].set_title('bedmap3 data')
-#     
-#     df_sparse = df_bedmap2[df_bedmap2.index % 10 == 1]  # Excludes every nth row
-#     im2 = ax[0,1].scatter(df_sparse['x'],df_sparse['y'], c = df_sparse['bedrock_altitude (m)'], vmin = v_min, vmax = v_max, marker=".", s = .5)
-#     plt.axis('scaled')
-#     cbar = plt.colorbar(im2, orientation="vertical")
-#     ax[0,1].set_title('bedmap2 data')
-#     
-#     df_sparse = df_out[df_out.index % 10 == 1]  # Excludes every nth row
-#     im3 = ax[1,0].scatter(df_sparse['x'],df_sparse['y'], c = df_sparse['bedrock_altitude (m)'], vmin = v_min, vmax = v_max, marker=".", s = .5)
-#     plt.axis('scaled')
-#     cbar = plt.colorbar(im3, orientation="vertical")
-#     ax[1,0].set_title('the excluded measurements')
-#     
-#     df_sparse = df[df.index % 10 == 1]  # Excludes every nth row
-#     im4 = ax[1,1].scatter(df_sparse['x'],df_sparse['y'], c = df_sparse['bed'], vmin = v_min, vmax = v_max, marker=".", s = .5)
-#     plt.axis('scaled')
-#     cbar = plt.colorbar(im4, orientation="vertical")
-#     x[1,1].set_title('the final bed elevation')
-# =============================================================================
-    
+     
     df_sparse1 = df_bedmap3[df_bedmap3.index % 10 == 1]
     df_sparse2 = df_bedmap2[df_bedmap2.index % 10 == 1]
     df_sparse3 = df_out[df_out.index % 10 == 1]
@@ -544,9 +403,24 @@ def load_radar(folder_path, output_csv, include_only_thickness_data = False):
 
 # TODO: method title
 # the method is adopted from GStatSim python package
-def grid_data(df, xx, yy, zz, res, xmin, xmax, ymin, ymax):
+"""grid compiled radar data into square grid with given resolution. 
+Notice that this function is a slight modification to the grid_data function in gstatsim python package.
+The extra argument xmin, xmax, ymin, ymax ensures the grid location even when no radar data is available at those locations
+
+Args:
+    df (pandas dataframe): the DataFrame containing all the radar data
+    x_name, y_name, z_name (strings): the label of the column in df representing x coordinate, y coordinate and bed elevation
+    res (int): resolution of the square grid, with unit of meters
+    xmin, xmax, ymin, ymax (ints): the boundary of domain, with unit of meters
+Returns:
+    df_grid (pandas dataframe): the DataFrame containing all the gridded radar data. This gridding is produced by averaging all radar data within each grid cell. The dataframe also record number of radar point measurements used in each grid. If no data available at the grid cell, the 'Z' column has nan value.
+    grid_matrix (numpy array): a 2D numpy array of gridded radar data
+    rows (int): number of rows in the gridded map
+    cols (int): number of columns in the gridded map
+"""
+def grid_data(df, x_name, y_name, z_name, res, xmin, xmax, ymin, ymax):
     
-    df = df.rename(columns = {xx: "X", yy: "Y", zz: "Z"})
+    df = df.rename(columns = {x_name: "X", y_name: "Y", z_name: "Z"})
 
     grid_coord, cols, rows = gs.Gridding.make_grid(xmin, xmax, ymin, ymax, res) 
 

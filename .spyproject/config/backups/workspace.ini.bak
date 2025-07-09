@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['geomc (6).py', 'README.md', 'pck/MCMC.py', 'pck/Topography.py', 'pck/__test__.py', 'pck/toy.py']
+recent_files = ['pck/__testChain__.py', 'pck/MCMC.py', 'geomc (6).py', 'pck/__testTopo__.py', 'pck/Topography.py']
 
 [main]
 version = 0.2.0
