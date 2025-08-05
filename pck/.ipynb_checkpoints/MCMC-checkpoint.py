@@ -683,7 +683,7 @@ class chain_crf(chain):
         step_cache[0] = False
         bed_cache[0] = bed_c
         
-        #crf_weight = self.crf_data_weight
+        crf_weight = self.crf_data_weight
 
         for i in range(1,n_iter):
                         
@@ -721,7 +721,7 @@ class chain_crf(chain):
             
             #perturb
             if self.block_type == 'CRF_weight':
-                perturb = f[mxmin:mxmax,mymin:mymax]*self.crf_data_weight[bxmin:bxmax,bymin:bymax]
+                perturb = f[mxmin:mxmax,mymin:mymax]*crf_weight[bxmin:bxmax,bymin:bymax]
             else:
                 perturb = f[mxmin:mxmax,mymin:mymax]
 
@@ -1107,162 +1107,4 @@ class chain_sgs(chain):
 
         resampled_times = psimdf.resampled_times.values.reshape((rows,cols))
                 
-        return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
-    
-    
-class chain_simulatedAnnealing(chain_crf):
-    
-    def __init_func__(self):
-        print('before running the chain, please set where the block update will be using chainname.set_high_vel_region(update_in_region, region_mask)')
-        print('then please set up the loss function using either chainname.set_loss_type or chainname.set_loss_func')
-        print('as it is a simulated annealing chain, the initial temperature and final temperature need to be set by chainname.set_temp')
-        print('an RandField object also need to be created correctly and passed in chainname.set_crf_data_weight(RF) and in chain.run(n_iter, RF)')
-        return
-        
-
-    """
-    Run the MCMC chain using block-based CRF/RF perturbations.
-    
-    Args:
-        n_iter (int): Number of iterations in the MCMC chain.
-        RF (RandField): Random field generator.
-        rng (str or np.random.Generator): Random number generator. Default is 'default', which makes a random generator with random seeds
-    
-    Returns:
-        bed_cache (4D array): Topography at each iteration.
-        loss_mc_cache (1D array): Mass conservation residual loss at each iteration. If the mass conservation loss is not used, return array of 0
-        loss_data_cache (1D array): Data misfit loss at each iteration. If the data misfit loss is not used, return array of 0
-        loss_cache (1D array): Total loss at each iteration.
-        step_cache (1D array): Boolean indicating if the step was accepted.
-        resampled_times (2D array): Number of times each pixel was updated.
-        blocks_cache (2D array): Info on block proposals at each iteration.
-    """
-    def run(self, n_iter, RF, rng='default'):
-        
-        if rng == 'default':
-            rng = np.random.default_rng()
-            
-        if not isinstance(RF, RandField):
-            raise TypeError('The arugment "RF" has to be an object of the class RandField')
-        
-       # initialize storage
-        loss_mc_cache = np.zeros(n_iter)
-        loss_data_cache = np.zeros(n_iter)
-        loss_cache = np.zeros(n_iter)
-        step_cache = np.zeros(n_iter)
-        bed_cache = np.zeros((n_iter, self.xx.shape[0], self.xx.shape[1]))
-        blocks_cache = np.full((n_iter, 4), np.nan)
-        resampled_times = np.zeros(self.xx.shape)
-        
-        # TODO: should i have an additional property called initial_bed?
-        bed_c = self.bed
-        
-        # initialize loss
-        mc_res = Topography.get_mass_conservation_residual(bed_c, self.surf, self.velx, self.vely, self.dhdt, self.smb)
-        data_diff = bed_c - self.cond_bed
-        loss_prev, loss_prev_mc, loss_prev_data = self.loss(mc_res,data_diff)
-
-        loss_cache[0] = loss_prev
-        loss_data_cache[0] = loss_prev_data
-        loss_mc_cache[0] = loss_prev_mc
-        step_cache[0] = False
-        bed_cache[0] = bed_c
-        
-        crf_weight = self.crf_data_weight
-
-        for i in range(1,n_iter):
-                        
-            #not done yet
-            f = RF.get_rfblock()
-            block_size = f.shape
-            
-            # determine the location of the block
-            if self.update_in_region:
-                while True:
-                    indexx = rng.integers(low=0, high=bed_c.shape[0], size=1)[0]
-                    indexy = rng.integers(low=0, high=bed_c.shape[1], size=1)[0]
-                    if self.region_mask[indexx,indexy] == 1:
-                        break
-            else:
-                indexx = rng.integers(low=0, high=bed_c.shape[0], size=1)[0]
-                indexy = rng.integers(low=0, high=bed_c.shape[1], size=1)[0]
-                
-            #record block
-            blocks_cache[i,:]=[indexx,indexy,block_size[0],block_size[1]]
-
-            #find the index of the block side, make sure the block is within the edge of the map
-            bxmin = np.max((0,int(indexx-block_size[0]/2)))
-            bxmax = np.min((bed_c.shape[0],int(indexx+block_size[0]/2)))
-            bymin = np.max((0,int(indexy-block_size[1]/2)))
-            bymax = np.min((bed_c.shape[1],int(indexy+block_size[1]/2)))
-            
-            #TODO: Okay this is fine, the problem is more of the boundary of the high velocity region
-
-            #find the index of the block side in the coordinate of the block
-            mxmin = np.max([block_size[0]-bxmax,0])
-            mxmax = np.min([bed_c.shape[0]-bxmin,block_size[0]])
-            mymin = np.max([block_size[1]-bymax,0])
-            mymax = np.min([bed_c.shape[1]-bymin,block_size[1]])
-            
-            #perturb
-            if self.block_type == 'CRF_weight':
-                perturb = f[mxmin:mxmax,mymin:mymax]*crf_weight[bxmin:bxmax,bymin:bymax]
-            else:
-                perturb = f[mxmin:mxmax,mymin:mymax]
-
-            bed_next = bed_c.copy()
-            bed_next[bxmin:bxmax,bymin:bymax]=bed_next[bxmin:bxmax,bymin:bymax] + perturb
-            
-            if self.update_in_region:
-                bed_next = np.where(self.region_mask, bed_next, bed_c)
-            else:
-                bed_next = np.where(self.grounded_ice_mask, bed_next, bed_c)
-                
-            mc_res = Topography.get_mass_conservation_residual(bed_next, self.surf, self.velx, self.vely, self.dhdt, self.smb)
-            data_diff = bed_next - self.cond_bed
-            loss_next, loss_next_mc, loss_next_data = self.loss(mc_res,data_diff)
-           
-            #make sure no bed elevation is greater than surface elevation
-            block_thickness = self.surf[bxmin:bxmax,bymin:bymax] - bed_next[bxmin:bxmax,bymin:bymax]
-            if self.update_in_region:
-                block_region_mask = self.region_mask[bxmin:bxmax,bymin:bymax]
-            else:
-                block_region_mask = self.grounded_ice_mask[bxmin:bxmax,bymin:bymax]
-            
-            if np.sum((block_thickness<=0)[block_region_mask==1]) > 0:
-                loss_next = np.inf
-
-            if loss_prev > loss_next:
-                acceptance_rate = 1
-            else:
-                acceptance_rate = min(1,np.exp(loss_prev-loss_next))
-            
-            u = np.random.rand()
-            if (u <= acceptance_rate):
-                bed_c = bed_next
-                
-                loss_prev = loss_next
-                loss_prev_mc = loss_next_mc
-                loss_cache[i] = loss_next
-                loss_mc_cache[i] = loss_next_mc
-                loss_prev_data = loss_next_data
-                loss_data_cache[i] = loss_next_data
-                
-                step_cache[i] = True
-                if self.update_in_region:
-                    resampled_times[bxmin:bxmax,bymin:bymax] += self.region_mask[bxmin:bxmax,bymin:bymax]
-                else:
-                    resampled_times[bxmin:bxmax,bymin:bymax] += self.grounded_ice_mask[bxmin:bxmax,bymin:bymax]
-                
-            else:
-                loss_mc_cache[i] = loss_prev_mc
-                loss_cache[i] = loss_prev
-                loss_data_cache[i] = loss_prev_data
-                step_cache[i] = False
-
-            bed_cache[i,:,:] = bed_c
-            
-            if i%1000 == 0:
-                print(f'i: {i} mc loss: {loss_mc_cache[i]:.3e} data loss: {loss_data_cache[i]:.3e} loss: {loss_cache[i]:.3e} acceptance rate: {np.sum(step_cache[np.max([0,i-1000]):i])/(np.min([i,1000]))}') #to window acceptance rate
-
         return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache

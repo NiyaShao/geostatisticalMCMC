@@ -98,15 +98,24 @@ y_uniq = np.unique(df_grid.Y)
 xx, yy = np.meshgrid(x_uniq, y_uniq)
 xx.shape
 
-print('testing for loading InSAR_MEaSUREs velocity dataset')
-velx, vely, velxerr, velyerr, figvel = Topography.load_vel_measures('../../Data/antarctica_ice_velocity_450m_v2.nc', xx, yy)
+print('converting the radar data based on the geoid')
+geoid_bedmap = Topography.convert_geoid(xx, yy, '../Data/geoid_EIGEN-GL04C.gdf')
+geoid_bm = Topography.convert_geoid(xx, yy, '../Data/geoid_EIGEN-6C4.gdf')
+geoid_diff = geoid_bm - geoid_bedmap
+beforeChange = df_grid['bed'].values
+df_grid['bed'] = df_grid['bed'] + geoid_diff
 
-print('testing for loading height change rate dataset')
-dhdt, fig = Topography.load_dhdt('../Data/ANT_G1920_GroundedIceHeight_v01.nc',xx,yy,interp_method='linear',begin_year = 2013,end_year=2015,month=7)
-
-print('testing for loading racmo dataset')   
-smb, fig = Topography.load_smb_racmo('../Data/SMB_RACMO2.3p2_yearly_ANT27_1979_2016.nc', xx, yy, interp_method='spline',time=2014)
-
-print('testing for loading BedMachine dataset')
-bm_mask, bm_source, bm_bed, bm_surface, bm_errbed, fig = Topography.load_bedmachine('../../Data/BedMachineAntarctica-v3.nc', xx, yy)
+# =============================================================================
+# print('testing for loading InSAR_MEaSUREs velocity dataset')
+# velx, vely, velxerr, velyerr, figvel = Topography.load_vel_measures('../../Data/antarctica_ice_velocity_450m_v2.nc', xx, yy)
+# 
+# print('testing for loading height change rate dataset')
+# dhdt, fig = Topography.load_dhdt('../Data/ANT_G1920_GroundedIceHeight_v01.nc',xx,yy,interp_method='linear',begin_year = 2013,end_year=2015,month=7)
+# 
+# print('testing for loading racmo dataset')   
+# smb, fig = Topography.load_smb_racmo('../Data/SMB_RACMO2.3p2_yearly_ANT27_1979_2016.nc', xx, yy, interp_method='spline',time=2014)
+# 
+# print('testing for loading BedMachine dataset')
+# bm_mask, bm_source, bm_bed, bm_surface, bm_errbed, fig = Topography.load_bedmachine('../../Data/BedMachineAntarctica-v3.nc', xx, yy)
+# =============================================================================
 

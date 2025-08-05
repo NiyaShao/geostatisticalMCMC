@@ -34,15 +34,6 @@ bm_mask, bm_source, bm_bed, bm_surface, bm_errbed, fig = Topography.load_bedmach
 #data_index = df[df["bed"].isnull() == False].index
 #mask_index = df[df["mask"]==1].index
 
-# find variograms
-df_bed = df.copy()
-df_bed = df_bed[df_bed["bed"].isnull() == False]
-data = df_bed['bed'].values.reshape(-1,1)
-coords = df_bed[['X','Y']].values
-roughness_region_mask = (df_bed['bedmachine_mask'].values)==2
-
-nst_trans, Nbed_radar, varios, fig = MCMC.fit_variogram(data, coords, roughness_region_mask, maxlag=70000, n_lags=70)
-
 # calculate high velocity region
 ocean_mask = (bm_mask == 0) | (bm_mask == 3)
 grounded_ice_mask = (bm_mask == 2)
@@ -61,11 +52,26 @@ csgs = MCMC.chain_sgs(xx, yy, sgs_bed, bm_surface, velx, vely, dhdt, smb, cond_b
 csgs.set_high_vel_region(True,highvel_mask)
 csgs.set_loss_type(map_func='sumsquare', diff_func='sumsquare', sigma_mc=3, sigma_data=50, massConvInRegion=True)
 
+trend = np.loadtxt('../trend_51_crf.txt')
+csgs.set_trend(trend = trend, detrend_map = True)
+
+
+# find variograms
+df_bed = df.copy()
+df_bed['detrended_bed'] = df_bed['bed'].values - trend.flatten()
+df_bed = df_bed[df_bed["detrended_bed"].isnull() == False]
+data = df_bed['detrended_bed'].values.reshape(-1,1)
+#df_bed = df_bed[df_bed["bed"].isnull() == False]
+#data = df_bed['bed'].values.reshape(-1,1)
+
+coords = df_bed[['X','Y']].values
+roughness_region_mask = (df_bed['bedmachine_mask'].values)==2
+
+nst_trans, Nbed_radar, varios, fig = MCMC.fit_variogram(data, coords, roughness_region_mask, maxlag=70000, n_lags=70)
+
 csgs.set_normal_transformation(nst_trans)
 
-csgs.set_trend(detrend_map = False)
-
-csgs.set_variogram('Spherical',varios[2][0],varios[2][1],0,isotropic=True)
+csgs.set_variogram('Spherical',[varios[2][0],varios[2][0]-5000],varios[2][1],0,isotropic=False,vario_azimuth=20)
 
 csgs.set_sgs_param(48, 50e3, sgs_rand_dropout_on=True, dropout_rate=0.3)
 
@@ -78,7 +84,7 @@ csgs.set_block_sizes(min_block_x, min_block_y, max_block_x, max_block_y)
 
 seed = 1
 randomGenerator = np.random.default_rng(seed)
-bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache = csgs.run(n_iter=500, rng=randomGenerator)
+bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache = csgs.run(n_iter=200, rng=randomGenerator)
  
 
 # TODO: change from crf to wrf, or just rf
@@ -170,5 +176,6 @@ bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_tim
 #       tested
 # test sgs bed with SGS update with both data and massConv loss without detrending with isotropic sgs
 #       random dropout not working, need to fix that
+#       tested
 # test sgs bed with SGS update with only massConv loss with detrending with anistropic sgs
 # test sgs bed with SGS update with only massConv loss with detrending with isotrpic sgs with dropout
