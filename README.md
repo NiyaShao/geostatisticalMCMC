@@ -1,6 +1,9 @@
 ### Library description
 This is an implementation of the geostatistical Monte Carlo Markvo Chain method, which is also called SGR in papers (cite) and xxx in (cite). The python script aims to provide necessary functionarity and ensure sufficient flexibility to be adjusted to different purposes or different regions. The package also include specific utility code to use the geostatistical MCMC approach to generate subglacial topographies, and the details of this method can be seen in the publication xxx. 
 
+### Installation
+TODO
+
 ### Recipe for generating topography ensemble
 Define location and grids
 Load all data needed for the location
