@@ -30,6 +30,6 @@ plot results
 - update tutorials
 
 ### Contributor
-Niya Shao
-Michael Field
-Emma MacKie
+- Niya Shao
+- Michael Field
+- Emma MacKie
