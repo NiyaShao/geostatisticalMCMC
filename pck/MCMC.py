@@ -17,7 +17,7 @@ import gstools as gstools
 import skgstat as skg
 from skgstat import models
 
-import geostatsMCMC.pck.Topography as Topography
+from . import Topography
 
 """
 Fit and compare different variogram models to the given data.
@@ -57,14 +57,18 @@ def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, sample
                        maxlag=maxlag, normalize=False, model='exponential',samples=samples)
     test3 = skg.Variogram(coords, values, bin_func='even', n_lags=n_lags, 
                        maxlag=maxlag, normalize=False, model='spherical',samples=samples)
+    test4 = skg.Variogram(coords, values, bin_func='even', n_lags=n_lags, 
+                       maxlag=maxlag, normalize=False, model='matern',samples=samples)
 
     tp1 = test1.parameters
     tp2 = test2.parameters
     tp3 = test3.parameters
+    tp4 = test4.parameters
 
     print('range, sill, and nugget for gaussian variogram is ', tp1)
     print('for exponential variogram is ', tp2)
     print('for spherical variogram is ', tp3)
+    print('range, sill, smoothness, and nugget for for matern variogram is ', tp4)
     
     # extract experimental variogram values
     xdata1 = test1.bins
@@ -73,26 +77,31 @@ def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, sample
     ydata2 = test2.experimental
     xdata3 = test3.bins
     ydata3 = test3.experimental
+    xdata4 = test4.bins
+    ydata4 = test4.experimental
 
     # evaluate models
     xi = np.linspace(0, xdata2[-1], n_lags) 
     y_gauss = [models.gaussian(h, tp1[0], tp1[1], tp1[2]) for h in xi]
     y_exp = [models.exponential(h, tp2[0], tp2[1], tp2[2]) for h in xi]
     y_sph = [models.spherical(h, tp3[0], tp3[1], tp3[2]) for h in xi]
+    y_mtn = [models.matern(h, tp4[0], tp4[1], tp4[2], tp4[3]) for h in xi] # variogram parameter is [range, sill, shape, nugget] for matern model.
 
     # plot variogram model
     fig = plt.figure(figsize=(6,4))
-    plt.plot(xi, y_gauss,'b--', label='Gaussian variogram')
-    plt.plot(xi, y_exp,'b-', label='Exponential variogram')
-    plt.plot(xi, y_sph,'b*-', label='Spherical variogram')
-    plt.plot(xdata1, ydata1,'o', markersize=4, color='green', label='Experimental variogram gaussian')
-    plt.plot(xdata2, ydata2,'o', markersize=4, color='orange', label='Experimental variogram exponential')
-    plt.plot(xdata3, ydata3,'o', markersize=4, color='pink', label='Experimental variogram spherical')
+    plt.plot(xi, y_gauss,'b--', label='Gaussian variogram model')
+    plt.plot(xi, y_exp,'b-', label='Exponential variogram model')
+    plt.plot(xi, y_sph,'b*-', label='Spherical variogram model')
+    plt.plot(xi, y_mtn,'b-.', label='Matern variogram model')
+    plt.plot(xdata1, ydata1,'o', markersize=4, color='green', label='Experimental variogram gaussian',alpha=0.4)
+    plt.plot(xdata2, ydata2,'o', markersize=4, color='orange', label='Experimental variogram exponential',alpha = 0.4)
+    plt.plot(xdata3, ydata3,'o', markersize=4, color='pink', label='Experimental variogram spherical', alpha = 0.4)
+    plt.plot(xdata4, ydata4,'o', markersize=4, color='burlywood', label='Experimental variogram matern', alpha = 0.4)
     plt.title('Variogram for synthetic data')
     plt.xlabel('Lag [m]'); plt.ylabel('Semivariance')  
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower right', fontsize=8)
     
-    return nst_trans, transformed_data, [tp1, tp2, tp3], fig
+    return nst_trans, transformed_data, [tp1, tp2, tp3, tp4], fig
 
 """
 a class used to represent unconditional or conditional random field
@@ -165,7 +174,7 @@ class RandField:
             
         rng (str or Generator): Random number generator or string 'default'.
     """
-    def __init__(self,range_max_x,range_max_y,range_min_x,range_min_y,scale_min,scale_max,nugget_max,model_name,isotropic,rng='default'):
+    def __init__(self,range_max_x,range_max_y,range_min_x,range_min_y,scale_min,scale_max,nugget_max,model_name,isotropic,smoothness = None, rng='default'):
         
         if rng == 'default':
             self.rng = np.random.default_rng()
@@ -179,6 +188,11 @@ class RandField:
         self.scale_min = scale_min
         self.scale_max = scale_max
         self.nugget_max = nugget_max
+        if (model_name != 'Gaussian') and (model_name != 'Exponential') and (model_name != 'Matern'):
+            raise Exception('please put in a valid model_name, including Gaussian, Exponential, and Matern')
+        if (model_name == 'Matern') and (smoothness == None):
+            raise Exception('a smoothness value must be defined if model name is Matern')
+        self.smoothness = smoothness
         self.model_name = model_name
         self.isotropic = isotropic
         
@@ -273,7 +287,7 @@ class RandField:
     Returns:
         field (2D numpy array): Realization of the random field.
     """
-    def get_random_field(self,X,Y,_mean=0,_var=1):
+    def get_random_field(self,X,Y,_mean=0,_var=1, n=1):
         
         
         rng = self.rng
@@ -299,14 +313,23 @@ class RandField:
                         len_scale = [range1/3,range2/3],
                         angles = angle*np.pi/180,
                         nugget = nug)
+        elif self.model_name == 'Matern':
+            smoothness = self.smoothness
+            model = gstools.Matern(dim=2, var=_var,
+                        len_scale = [range1/2,range2/2],
+                        angles = angle*np.pi/180,
+                        nugget = nug,
+                        nu = smoothness)
         else:
             print('error model name')
             return
 
-        srf = gstools.SRF(model)
-        field = srf.structured([X, Y]).T*scale + _mean
+        fields = np.zeros((n,len(Y),len(X)))
+        for i in range(n):
+            srf = gstools.SRF(model)
+            fields[i,:,:] = srf.structured([X, Y]).T*scale + _mean
 
-        return field
+        return fields
     
     def min_dist(hard_mat, xx, yy):
         dist = np.zeros(xx.shape)
@@ -396,7 +419,9 @@ class RandField:
 
         #in-case of a weird bug
         while True:
+            ## TODO: have to modify this for n>1
             f = self.get_random_field(x_uniq, y_uniq)
+            f = f[0,:,:]
             if (np.sum(np.isnan(f))) != 0:
                 print('f have nan')
                 continue
@@ -855,19 +880,20 @@ class chain_sgs(chain):
         elif vario_type == 'Matern':
             if (vario_smoothness == None) or (vario_smoothness <= 0):
                 raise ValueError('vario_smoothness argument should be a positive float when the vario_type is Matern')
+            else:
+                print('the variogram is set to type', vario_type)
         else:
             raise ValueError('vario_type argument should be one of the following: Gaussian, Exponential, Spherical, or Matern')
         
         self.vario_type = vario_type
         
-        # TODO, to add Matern, need to change it here
         if isotropic:
             vario_azimuth = 0
-            self.vario_param = [vario_azimuth, vario_nugget, vario_range, vario_range, vario_sill, vario_type]
+            self.vario_param = [vario_azimuth, vario_nugget, vario_range, vario_range, vario_sill, vario_type, vario_smoothness]
         else:
             if (len(vario_range) == 2):
                 print('set to anistropic variogram with major range and minor range to be ', vario_range)
-                self.vario_param = [vario_azimuth, vario_nugget, vario_range[0], vario_range[1], vario_sill, vario_type]
+                self.vario_param = [vario_azimuth, vario_nugget, vario_range[0], vario_range[1], vario_sill, vario_type, vario_smoothness]
             else:
                 raise ValueError ("vario_range need to be a list with two floats to specifying for major range and minor range of the variogram when isotropic is set to False")
     
@@ -1040,7 +1066,11 @@ class chain_sgs(chain):
             Pred_grid_xy_change = np.concatenate((x,y),axis=1)
 
             # TODO, add seeding Generator into the gs
-            sim2 = gs.Interpolation.okrige_sgs(Pred_grid_xy_change, new_df, 'x', 'y', 'z', self.sgs_param[0], self.vario_param, self.sgs_param[1], quiet=True) 
+            if self.vario_param[5] == 'Matern':
+                vario_p = self.vario_param
+            else:
+                vario_p = self.vario_param[:6]
+            sim2 = gs.Interpolation.okrige_sgs(Pred_grid_xy_change, new_df, 'x', 'y', 'z', self.sgs_param[0], vario_p, self.sgs_param[1], quiet=True) 
 
             xy_grid = np.concatenate((Pred_grid_xy_change[:,0].reshape(-1,1),Pred_grid_xy_change[:,1].reshape(-1,1),np.array(sim2).reshape(-1,1)),axis=1)
 

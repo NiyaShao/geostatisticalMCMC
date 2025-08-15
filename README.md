@@ -9,11 +9,9 @@ Load all data needed for the location
 - surface elevation (BedMachine or REMA?)
 - surface elevation change (ITS_LIVE)
 - surface mass balance (RACMO)
-- basal mass balance (optional?)
 - bedmachine
 Obtain inversion domain boundary
 Define residual distribution
-Preprocessing?
 meso-scale chain
 fine-scale chain
 plot results

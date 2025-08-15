@@ -70,7 +70,7 @@ def load_smb_racmo(dataset_path,xx,yy,time=2015,interp_method='linear',k=1):
     res = np.abs(xx[1,1] - xx[0,0])
     
     # restrict the domain of interpolation
-    msk = (xx2 > xx.min() - res*200) & (xx2 < xx.max() +  res*200) & (yy2 > yy.min() - res*200) & (yy2 < yy.max() + res*200)
+    msk = (xx2 > xx.min() - res*200) & (xx2 < xx.max() + res*200) & (yy2 > yy.min() - res*200) & (yy2 < yy.max() + res*200)
     ix = xx2[msk]
     iy = yy2[msk]
     max_time = 2016
@@ -486,7 +486,6 @@ def grid_data(df, x_name, y_name, z_name, res, xmin, xmax, ymin, ymax):
 
 #         if ((xindex >= rows) | (yindex >= cols)):
 #             continue
-s
 #         grid_var[xindex,yindex] = np_data[i,2] - grid_mean[xindex,yindex] + grid_var[xindex,yindex]
 #         grid_count[xindex,yindex] = 1 + grid_count[xindex,yindex]
 
@@ -509,7 +508,7 @@ s
 """
 """
 def convert_geoid(xx, yy, geoid_file_path):
-    df_geoid = pd.read_csv(geoid_file_path,skiprows=36,header=None,sep='\s+',names=['lon','lat','anomalyHeight'])
+    df_geoid = pd.read_csv(geoid_file_path,skiprows=36,header=None,sep=r"\s+",names=['lon','lat','anomalyHeight'])
     latlon = CRS.from_epsg(4326)
     polar = CRS.from_epsg(3031)
     

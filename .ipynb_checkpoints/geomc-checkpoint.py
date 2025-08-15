@@ -679,7 +679,7 @@ def sample_both_block_logi(bed, surf, velx, vely, dhdt, smb,
         return bed_cache, loss_mc_cache, loss_cache, step_cache, resampled_times, blocks_cache
     
 
-def exclude_data_rf(df_in, rf_bed, cond_bed, num_of_std, xx, yy, shallow, dfmaskname = 'bedmachine_mask'):
+def exclude_data_rf(df_in, rf_bed, cond_bed, num_of_std, xx, yy, shallow, dfmaskname = 'bedmachine_mask', inside_highvel = True, dfhighvelname = 'highvel_mask', dfbedname = 'bed'):
     
     df = df_in.copy()
     
@@ -690,8 +690,12 @@ def exclude_data_rf(df_in, rf_bed, cond_bed, num_of_std, xx, yy, shallow, dfmask
     ax2 = fig.add_subplot(gs[1, 0])
     ax3 = fig.add_subplot(gs[2, 0])
     
+    if inside_highvel:
+        highvel = df[dfhighvelname].values.reshape(xx.shape)
+        rfradardiff = (rf_bed - cond_bed)[highvel]
+        stdrf = np.std(rfradardiff[~np.isnan(rfradardiff)])
+
     rfradardiff = rf_bed - cond_bed
-    stdrf = np.std(rfradardiff[~np.isnan(rfradardiff)])
     
     print('the standard deviation of difference to conditioning data is', stdrf)
     
@@ -720,21 +724,37 @@ def exclude_data_rf(df_in, rf_bed, cond_bed, num_of_std, xx, yy, shallow, dfmask
     df['bedQCrf'] = [np.nan]*df.shape[0]
     df['bedrf'] = rf_bed.flatten()
     num_excluded_data = 0
-    for index, row in df.iterrows():
-        if ((row[dfmaskname] == 3) | (row[dfmaskname] == 0)): #if in ice shelf
-            df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        # elif (row['bedmachine_mask'] == 0): #or sea floor
-        #     df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        elif pd.isna(row['bed']):
-            continue
-        elif (row['bed'] < row['bedrf'] + stdrf*num_of_std) and (row['bed'] > row['bedrf'] - stdrf*num_of_std) and (~shallow):
-            df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        elif (row['bed'] < row['bedrf'] + stdrf*1.5) and (shallow):
-            df.loc[index,'bedQCrf'] = df.loc[index,'bed']
-        else:
-            num_excluded_data += 1
-            
-    print('the exclusion rate is',num_excluded_data / df[df['bed'].isnull()==False].shape[0])
+    if inside_highvel:
+        for index, row in df.iterrows():
+            if (row[dfhighvelname] == 0): #if outside
+                df.loc[index,'bedQCrf'] = df.loc[index,dfbedname]
+            elif pd.isna(row[dfbedname]):
+                continue
+            elif (row[dfbedname] < row['bedrf'] + stdrf*num_of_std) and (row[dfbedname] > row['bedrf'] - stdrf*num_of_std) and (~shallow):
+                df.loc[index,'bedQCrf'] = df.loc[index,dfbedname]
+            elif (row[dfbedname] < row['bedrf'] + stdrf*1.5) and (shallow):
+                df.loc[index,'bedQCrf'] = df.loc[index,dfbedname]
+            else:
+                num_excluded_data += 1
+    else:
+        for index, row in df.iterrows():
+            if ((row[dfmaskname] == 3) | (row[dfmaskname] == 0)): #if in ice shelf
+                df.loc[index,'bedQCrf'] = df.loc[index,'bed']
+            # elif (row['bedmachine_mask'] == 0): #or sea floor
+            #     df.loc[index,'bedQCrf'] = df.loc[index,'bed']
+            elif pd.isna(row[dfbedname]):
+                continue
+            elif (row[dfbedname] < row['bedrf'] + stdrf*num_of_std) and (row[dfbedname] > row['bedrf'] - stdrf*num_of_std) and (~shallow):
+                df.loc[index,'bedQCrf'] = df.loc[index,dfbedname]
+            elif (row[dfbedname] < row['bedrf'] + stdrf*1.5) and (shallow):
+                df.loc[index,'bedQCrf'] = df.loc[index,dfbedname]
+            else:
+                num_excluded_data += 1
+
+    if inside_highvel:
+        print('the number of excluded data is', num_excluded_data)
+    else: 
+        print('the exclusion rate is',num_excluded_data / df[df[dfbedname].isnull()==False].shape[0])
             
     return df
 

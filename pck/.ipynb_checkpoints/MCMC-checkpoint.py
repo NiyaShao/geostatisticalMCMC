@@ -17,7 +17,7 @@ import gstools as gstools
 import skgstat as skg
 from skgstat import models
 
-import geostatsMCMC.pck.Topography as Topography
+from . import Topography
 
 """
 Fit and compare different variogram models to the given data.
@@ -57,14 +57,18 @@ def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, sample
                        maxlag=maxlag, normalize=False, model='exponential',samples=samples)
     test3 = skg.Variogram(coords, values, bin_func='even', n_lags=n_lags, 
                        maxlag=maxlag, normalize=False, model='spherical',samples=samples)
+    test4 = skg.Variogram(coords, values, bin_func='even', n_lags=n_lags, 
+                       maxlag=maxlag, normalize=False, model='matern',samples=samples)
 
     tp1 = test1.parameters
     tp2 = test2.parameters
     tp3 = test3.parameters
+    tp4 = test4.parameters
 
     print('range, sill, and nugget for gaussian variogram is ', tp1)
     print('for exponential variogram is ', tp2)
     print('for spherical variogram is ', tp3)
+    print('range, sill, smoothness, and nugget for for matern variogram is ', tp4)
     
     # extract experimental variogram values
     xdata1 = test1.bins
@@ -73,26 +77,31 @@ def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, sample
     ydata2 = test2.experimental
     xdata3 = test3.bins
     ydata3 = test3.experimental
+    xdata4 = test4.bins
+    ydata4 = test4.experimental
 
     # evaluate models
     xi = np.linspace(0, xdata2[-1], n_lags) 
     y_gauss = [models.gaussian(h, tp1[0], tp1[1], tp1[2]) for h in xi]
     y_exp = [models.exponential(h, tp2[0], tp2[1], tp2[2]) for h in xi]
     y_sph = [models.spherical(h, tp3[0], tp3[1], tp3[2]) for h in xi]
+    y_mtn = [models.matern(h, tp4[0], tp4[1], tp4[2], tp4[3]) for h in xi] # variogram parameter is [range, sill, shape, nugget] for matern model.
 
     # plot variogram model
     fig = plt.figure(figsize=(6,4))
-    plt.plot(xi, y_gauss,'b--', label='Gaussian variogram')
-    plt.plot(xi, y_exp,'b-', label='Exponential variogram')
-    plt.plot(xi, y_sph,'b*-', label='Spherical variogram')
-    plt.plot(xdata1, ydata1,'o', markersize=4, color='green', label='Experimental variogram gaussian')
-    plt.plot(xdata2, ydata2,'o', markersize=4, color='orange', label='Experimental variogram exponential')
-    plt.plot(xdata3, ydata3,'o', markersize=4, color='pink', label='Experimental variogram spherical')
+    plt.plot(xi, y_gauss,'b--', label='Gaussian variogram model')
+    plt.plot(xi, y_exp,'b-', label='Exponential variogram model')
+    plt.plot(xi, y_sph,'b*-', label='Spherical variogram model')
+    plt.plot(xi, y_mtn,'b-.', label='Matern variogram model')
+    plt.plot(xdata1, ydata1,'o', markersize=4, color='green', label='Experimental variogram gaussian',alpha=0.4)
+    plt.plot(xdata2, ydata2,'o', markersize=4, color='orange', label='Experimental variogram exponential',alpha = 0.4)
+    plt.plot(xdata3, ydata3,'o', markersize=4, color='pink', label='Experimental variogram spherical', alpha = 0.4)
+    plt.plot(xdata4, ydata4,'o', markersize=4, color='burlywood', label='Experimental variogram matern', alpha = 0.4)
     plt.title('Variogram for synthetic data')
     plt.xlabel('Lag [m]'); plt.ylabel('Semivariance')  
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower right', fontsize=8)
     
-    return nst_trans, transformed_data, [tp1, tp2, tp3], fig
+    return nst_trans, transformed_data, [tp1, tp2, tp3, tp4], fig
 
 """
 a class used to represent unconditional or conditional random field
@@ -165,7 +174,7 @@ class RandField:
             
         rng (str or Generator): Random number generator or string 'default'.
     """
-    def __init__(self,range_max_x,range_max_y,range_min_x,range_min_y,scale_min,scale_max,nugget_max,model_name,isotropic,rng='default'):
+    def __init__(self,range_max_x,range_max_y,range_min_x,range_min_y,scale_min,scale_max,nugget_max,model_name,isotropic,smoothness = None, rng='default'):
         
         if rng == 'default':
             self.rng = np.random.default_rng()
@@ -179,6 +188,11 @@ class RandField:
         self.scale_min = scale_min
         self.scale_max = scale_max
         self.nugget_max = nugget_max
+        if (model_name != 'Gaussian') and (model_name != 'Exponential') and (model_name != 'Matern'):
+            raise Exception('please put in a valid model_name, including Gaussian, Exponential, and Matern')
+        if (model_name == 'Matern') and (smoothness == None):
+            raise Exception('a smoothness value must be defined if model name is Matern')
+        self.smoothness = smoothness
         self.model_name = model_name
         self.isotropic = isotropic
         
@@ -273,7 +287,7 @@ class RandField:
     Returns:
         field (2D numpy array): Realization of the random field.
     """
-    def get_random_field(self,X,Y,_mean=0,_var=1):
+    def get_random_field(self,X,Y,_mean=0,_var=1, n=1):
         
         
         rng = self.rng
@@ -299,14 +313,23 @@ class RandField:
                         len_scale = [range1/3,range2/3],
                         angles = angle*np.pi/180,
                         nugget = nug)
+        elif self.model_name == 'Matern':
+            smoothness = self.smoothness
+            model = gstools.Matern(dim=2, var=_var,
+                        len_scale = [range1/2,range2/2],
+                        angles = angle*np.pi/180,
+                        nugget = nug,
+                        nu = smoothness)
         else:
             print('error model name')
             return
 
-        srf = gstools.SRF(model)
-        field = srf.structured([X, Y]).T*scale + _mean
+        fields = np.zeros((n,len(Y),len(X)))
+        for i in range(n):
+            srf = gstools.SRF(model)
+            fields[i,:,:] = srf.structured([X, Y]).T*scale + _mean
 
-        return field
+        return fields
     
     def min_dist(hard_mat, xx, yy):
         dist = np.zeros(xx.shape)
@@ -396,7 +419,9 @@ class RandField:
 
         #in-case of a weird bug
         while True:
+            ## TODO: have to modify this for n>1
             f = self.get_random_field(x_uniq, y_uniq)
+            f = f[0,:,:]
             if (np.sum(np.isnan(f))) != 0:
                 print('f have nan')
                 continue
@@ -683,7 +708,7 @@ class chain_crf(chain):
         step_cache[0] = False
         bed_cache[0] = bed_c
         
-        crf_weight = self.crf_data_weight
+        #crf_weight = self.crf_data_weight
 
         for i in range(1,n_iter):
                         
@@ -721,7 +746,7 @@ class chain_crf(chain):
             
             #perturb
             if self.block_type == 'CRF_weight':
-                perturb = f[mxmin:mxmax,mymin:mymax]*crf_weight[bxmin:bxmax,bymin:bymax]
+                perturb = f[mxmin:mxmax,mymin:mymax]*self.crf_data_weight[bxmin:bxmax,bymin:bymax]
             else:
                 perturb = f[mxmin:mxmax,mymin:mymax]
 
@@ -855,19 +880,20 @@ class chain_sgs(chain):
         elif vario_type == 'Matern':
             if (vario_smoothness == None) or (vario_smoothness <= 0):
                 raise ValueError('vario_smoothness argument should be a positive float when the vario_type is Matern')
+            else:
+                print('the variogram is set to type', vario_type)
         else:
             raise ValueError('vario_type argument should be one of the following: Gaussian, Exponential, Spherical, or Matern')
         
         self.vario_type = vario_type
         
-        # TODO, to add Matern, need to change it here
         if isotropic:
             vario_azimuth = 0
-            self.vario_param = [vario_azimuth, vario_nugget, vario_range, vario_range, vario_sill, vario_type]
+            self.vario_param = [vario_azimuth, vario_nugget, vario_range, vario_range, vario_sill, vario_type, vario_smoothness]
         else:
             if (len(vario_range) == 2):
                 print('set to anistropic variogram with major range and minor range to be ', vario_range)
-                self.vario_param = [vario_azimuth, vario_nugget, vario_range[0], vario_range[1], vario_sill, vario_type]
+                self.vario_param = [vario_azimuth, vario_nugget, vario_range[0], vario_range[1], vario_sill, vario_type, vario_smoothness]
             else:
                 raise ValueError ("vario_range need to be a list with two floats to specifying for major range and minor range of the variogram when isotropic is set to False")
     
@@ -1040,7 +1066,11 @@ class chain_sgs(chain):
             Pred_grid_xy_change = np.concatenate((x,y),axis=1)
 
             # TODO, add seeding Generator into the gs
-            sim2 = gs.Interpolation.okrige_sgs(Pred_grid_xy_change, new_df, 'x', 'y', 'z', self.sgs_param[0], self.vario_param, self.sgs_param[1], quiet=True) 
+            if self.vario_param[5] == 'Matern':
+                vario_p = self.vario_param
+            else:
+                vario_p = self.vario_param[:6]
+            sim2 = gs.Interpolation.okrige_sgs(Pred_grid_xy_change, new_df, 'x', 'y', 'z', self.sgs_param[0], vario_p, self.sgs_param[1], quiet=True) 
 
             xy_grid = np.concatenate((Pred_grid_xy_change[:,0].reshape(-1,1),Pred_grid_xy_change[:,1].reshape(-1,1),np.array(sim2).reshape(-1,1)),axis=1)
 
@@ -1107,4 +1137,162 @@ class chain_sgs(chain):
 
         resampled_times = psimdf.resampled_times.values.reshape((rows,cols))
                 
+        return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
+    
+    
+class chain_simulatedAnnealing(chain_crf):
+    
+    def __init_func__(self):
+        print('before running the chain, please set where the block update will be using chainname.set_high_vel_region(update_in_region, region_mask)')
+        print('then please set up the loss function using either chainname.set_loss_type or chainname.set_loss_func')
+        print('as it is a simulated annealing chain, the initial temperature and final temperature need to be set by chainname.set_temp')
+        print('an RandField object also need to be created correctly and passed in chainname.set_crf_data_weight(RF) and in chain.run(n_iter, RF)')
+        return
+        
+
+    """
+    Run the MCMC chain using block-based CRF/RF perturbations.
+    
+    Args:
+        n_iter (int): Number of iterations in the MCMC chain.
+        RF (RandField): Random field generator.
+        rng (str or np.random.Generator): Random number generator. Default is 'default', which makes a random generator with random seeds
+    
+    Returns:
+        bed_cache (4D array): Topography at each iteration.
+        loss_mc_cache (1D array): Mass conservation residual loss at each iteration. If the mass conservation loss is not used, return array of 0
+        loss_data_cache (1D array): Data misfit loss at each iteration. If the data misfit loss is not used, return array of 0
+        loss_cache (1D array): Total loss at each iteration.
+        step_cache (1D array): Boolean indicating if the step was accepted.
+        resampled_times (2D array): Number of times each pixel was updated.
+        blocks_cache (2D array): Info on block proposals at each iteration.
+    """
+    def run(self, n_iter, RF, rng='default'):
+        
+        if rng == 'default':
+            rng = np.random.default_rng()
+            
+        if not isinstance(RF, RandField):
+            raise TypeError('The arugment "RF" has to be an object of the class RandField')
+        
+       # initialize storage
+        loss_mc_cache = np.zeros(n_iter)
+        loss_data_cache = np.zeros(n_iter)
+        loss_cache = np.zeros(n_iter)
+        step_cache = np.zeros(n_iter)
+        bed_cache = np.zeros((n_iter, self.xx.shape[0], self.xx.shape[1]))
+        blocks_cache = np.full((n_iter, 4), np.nan)
+        resampled_times = np.zeros(self.xx.shape)
+        
+        # TODO: should i have an additional property called initial_bed?
+        bed_c = self.bed
+        
+        # initialize loss
+        mc_res = Topography.get_mass_conservation_residual(bed_c, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+        data_diff = bed_c - self.cond_bed
+        loss_prev, loss_prev_mc, loss_prev_data = self.loss(mc_res,data_diff)
+
+        loss_cache[0] = loss_prev
+        loss_data_cache[0] = loss_prev_data
+        loss_mc_cache[0] = loss_prev_mc
+        step_cache[0] = False
+        bed_cache[0] = bed_c
+        
+        crf_weight = self.crf_data_weight
+
+        for i in range(1,n_iter):
+                        
+            #not done yet
+            f = RF.get_rfblock()
+            block_size = f.shape
+            
+            # determine the location of the block
+            if self.update_in_region:
+                while True:
+                    indexx = rng.integers(low=0, high=bed_c.shape[0], size=1)[0]
+                    indexy = rng.integers(low=0, high=bed_c.shape[1], size=1)[0]
+                    if self.region_mask[indexx,indexy] == 1:
+                        break
+            else:
+                indexx = rng.integers(low=0, high=bed_c.shape[0], size=1)[0]
+                indexy = rng.integers(low=0, high=bed_c.shape[1], size=1)[0]
+                
+            #record block
+            blocks_cache[i,:]=[indexx,indexy,block_size[0],block_size[1]]
+
+            #find the index of the block side, make sure the block is within the edge of the map
+            bxmin = np.max((0,int(indexx-block_size[0]/2)))
+            bxmax = np.min((bed_c.shape[0],int(indexx+block_size[0]/2)))
+            bymin = np.max((0,int(indexy-block_size[1]/2)))
+            bymax = np.min((bed_c.shape[1],int(indexy+block_size[1]/2)))
+            
+            #TODO: Okay this is fine, the problem is more of the boundary of the high velocity region
+
+            #find the index of the block side in the coordinate of the block
+            mxmin = np.max([block_size[0]-bxmax,0])
+            mxmax = np.min([bed_c.shape[0]-bxmin,block_size[0]])
+            mymin = np.max([block_size[1]-bymax,0])
+            mymax = np.min([bed_c.shape[1]-bymin,block_size[1]])
+            
+            #perturb
+            if self.block_type == 'CRF_weight':
+                perturb = f[mxmin:mxmax,mymin:mymax]*crf_weight[bxmin:bxmax,bymin:bymax]
+            else:
+                perturb = f[mxmin:mxmax,mymin:mymax]
+
+            bed_next = bed_c.copy()
+            bed_next[bxmin:bxmax,bymin:bymax]=bed_next[bxmin:bxmax,bymin:bymax] + perturb
+            
+            if self.update_in_region:
+                bed_next = np.where(self.region_mask, bed_next, bed_c)
+            else:
+                bed_next = np.where(self.grounded_ice_mask, bed_next, bed_c)
+                
+            mc_res = Topography.get_mass_conservation_residual(bed_next, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+            data_diff = bed_next - self.cond_bed
+            loss_next, loss_next_mc, loss_next_data = self.loss(mc_res,data_diff)
+           
+            #make sure no bed elevation is greater than surface elevation
+            block_thickness = self.surf[bxmin:bxmax,bymin:bymax] - bed_next[bxmin:bxmax,bymin:bymax]
+            if self.update_in_region:
+                block_region_mask = self.region_mask[bxmin:bxmax,bymin:bymax]
+            else:
+                block_region_mask = self.grounded_ice_mask[bxmin:bxmax,bymin:bymax]
+            
+            if np.sum((block_thickness<=0)[block_region_mask==1]) > 0:
+                loss_next = np.inf
+
+            if loss_prev > loss_next:
+                acceptance_rate = 1
+            else:
+                acceptance_rate = min(1,np.exp(loss_prev-loss_next))
+            
+            u = np.random.rand()
+            if (u <= acceptance_rate):
+                bed_c = bed_next
+                
+                loss_prev = loss_next
+                loss_prev_mc = loss_next_mc
+                loss_cache[i] = loss_next
+                loss_mc_cache[i] = loss_next_mc
+                loss_prev_data = loss_next_data
+                loss_data_cache[i] = loss_next_data
+                
+                step_cache[i] = True
+                if self.update_in_region:
+                    resampled_times[bxmin:bxmax,bymin:bymax] += self.region_mask[bxmin:bxmax,bymin:bymax]
+                else:
+                    resampled_times[bxmin:bxmax,bymin:bymax] += self.grounded_ice_mask[bxmin:bxmax,bymin:bymax]
+                
+            else:
+                loss_mc_cache[i] = loss_prev_mc
+                loss_cache[i] = loss_prev
+                loss_data_cache[i] = loss_prev_data
+                step_cache[i] = False
+
+            bed_cache[i,:,:] = bed_c
+            
+            if i%1000 == 0:
+                print(f'i: {i} mc loss: {loss_mc_cache[i]:.3e} data loss: {loss_data_cache[i]:.3e} loss: {loss_cache[i]:.3e} acceptance rate: {np.sum(step_cache[np.max([0,i-1000]):i])/(np.min([i,1000]))}') #to window acceptance rate
+
         return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
