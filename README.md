@@ -28,3 +28,8 @@ plot results
 - aggregate generation of random fields in the beginning of each chain segment, or store LU decomposition in matrices
 - adopt faster geostatistical simulation method
 - update tutorials
+
+### Contributor
+Niya Shao
+Michael Field
+Emma MacKie
