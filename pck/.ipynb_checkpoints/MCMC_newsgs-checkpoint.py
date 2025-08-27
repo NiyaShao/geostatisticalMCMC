@@ -12,12 +12,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import QuantileTransformer
-import gstatsim as gs
+import gstatsim as gsm
 import gstools as gstools
 import skgstat as skg
 from skgstat import models
 
-import Topography
+from . import Topography
+
+from . import gstatsim_custom as gsc
 
 """
 Fit and compare different variogram models to the given data.
@@ -1063,7 +1065,7 @@ class chain_sgs(chain):
 
             new_df = new_df[~new_df.index.isin(drop_index)].copy()
 
-            Pred_grid_xy_change = gs.Gridding.prediction_grid(rsm_x_min, rsm_x_max - resolution, rsm_y_min, rsm_y_max - resolution, resolution)
+            Pred_grid_xy_change = gsm.Gridding.prediction_grid(rsm_x_min, rsm_x_max - resolution, rsm_y_min, rsm_y_max - resolution, resolution)
             x = np.reshape(Pred_grid_xy_change[:,0], (len(Pred_grid_xy_change[:,0]), 1))
             y = np.flip(np.reshape(Pred_grid_xy_change[:,1], (len(Pred_grid_xy_change[:,1]), 1)))
             Pred_grid_xy_change = np.concatenate((x,y),axis=1)
