@@ -6,3 +6,5 @@ Data.zip
 .spyproject/
 pck/__pycache__/
 pck/.ipynb_checkpoints/
+Tutorials/.ipynb_checkpoints/
+Tutorials/__pycache__/
