@@ -152,7 +152,7 @@ max_block_y = 30
 csgs.set_block_sizes(min_block_x, min_block_y, max_block_x, max_block_y)
 
 start = time.time()
-bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, blocks_cache = csgs.run(n_iter=1000)
+bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resample_times, blocks_cache = csgs.run(n_iter=1000)
 print('it takes ', start - time.time())
 
 

@@ -3,3 +3,5 @@ pck/radar_compiled_test.csv
 pck/*.txt
 pck/gstatsim_custom/
 Data.zip
+.spyproject/
+pck/__pycache__/
