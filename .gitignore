@@ -5,3 +5,4 @@ pck/gstatsim_custom/
 Data.zip
 .spyproject/
 pck/__pycache__/
+pck/.ipynb_checkpoints/
