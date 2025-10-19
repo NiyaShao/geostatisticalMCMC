@@ -8,7 +8,7 @@
 <table class="heading">
 <tr class="heading-text decor">
 <td class="title">&nbsp;<br><strong class="title"><a href="gstatsMCMC.html" class="white">gstatsMCMC</a>.MCMC</strong></td>
-<td class="extra"><a href=".">index</a><br><a href="file:/home/niyashao/3MC/geostatsMCMC/gstatsMCMC/MCMC.py">/home/niyashao/3MC/geostatsMCMC/gstatsMCMC/MCMC.py</a></td></tr></table>
+<td class="extra"><a href=".">index</a><br><a href="file:/home/niyashao/3MC/geostatisticalMCMC/gstatsMCMC/MCMC.py">/home/niyashao/3MC/geostatisticalMCMC/gstatsMCMC/MCMC.py</a></td></tr></table>
     <p><span class="code">Created&nbsp;on&nbsp;Thu&nbsp;Jun&nbsp;26&nbsp;16:57:24&nbsp;2025<br>
 &nbsp;<br>
 @author:&nbsp;niyashao</span></p>
@@ -20,14 +20,13 @@
 <tr><td class="decor pkg-content-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
 <td class="singlecolumn"><table><tr><td class="multicolumn"><a href="gstatsMCMC.Topography.html">gstatsMCMC.Topography</a><br>
 <a href="gstatsim.html">gstatsim</a><br>
-<a href="gstools.html">gstools</a><br>
-</td><td class="multicolumn"><a href="skgstat.models.html">skgstat.models</a><br>
-<a href="numpy.html">numpy</a><br>
+</td><td class="multicolumn"><a href="gstools.html">gstools</a><br>
+<a href="skgstat.models.html">skgstat.models</a><br>
+</td><td class="multicolumn"><a href="numpy.html">numpy</a><br>
 <a href="pandas.html">pandas</a><br>
 </td><td class="multicolumn"><a href="matplotlib.pyplot.html">matplotlib.pyplot</a><br>
-<a href="pydoc.html">pydoc</a><br>
 <a href="skgstat.html">skgstat</a><br>
-</td><td class="multicolumn"></td></tr></table></td></tr></table><p>
+</td></tr></table></td></tr></table><p>
 <table class="section">
 <tr class="decor index-decor heading-text">
 <td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Classes</strong></td></tr>
@@ -54,67 +53,103 @@
 <td class="section-title" colspan=3>&nbsp;<br><a name="RandField">class <strong>RandField</strong></a>(<a href="builtins.html#object">builtins.object</a>)</td></tr>
     
 <tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
-<td class="decor title-decor" colspan=2><span class="code"><a href="#RandField">RandField</a>(range_max_x,&nbsp;range_max_y,&nbsp;range_min_x,&nbsp;range_min_y,&nbsp;scale_min,&nbsp;scale_max,&nbsp;nugget_max,&nbsp;model_name,&nbsp;isotropic,&nbsp;smoothness=None,&nbsp;rng='default')<br>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#RandField">RandField</a>(range_min_x,&nbsp;range_max_x,&nbsp;range_min_y,&nbsp;range_max_y,&nbsp;scale_min,&nbsp;scale_max,&nbsp;nugget_max,&nbsp;model_name,&nbsp;isotropic,&nbsp;smoothness=None,&nbsp;rng_seed=None)<br>
 &nbsp;<br>
-a&nbsp;class&nbsp;used&nbsp;to&nbsp;represent&nbsp;unconditional&nbsp;or&nbsp;conditional&nbsp;random&nbsp;field<br>&nbsp;</span></td></tr>
+Generates&nbsp;2D&nbsp;random&nbsp;fields&nbsp;based&nbsp;on&nbsp;specified&nbsp;variogram&nbsp;models.<br>
+&nbsp;<br>
+This&nbsp;class&nbsp;creates&nbsp;random&nbsp;fields&nbsp;with&nbsp;defined&nbsp;spatial&nbsp;statistics.&nbsp;It&nbsp;can&nbsp;produce&nbsp;both&nbsp;unconditional&nbsp;fields&nbsp;and&nbsp;conditional&nbsp;fields,&nbsp;where&nbsp;conditioning&nbsp;is&nbsp;achieved&nbsp;using&nbsp;a&nbsp;weighting&nbsp;scheme&nbsp;based&nbsp;on&nbsp;the&nbsp;distance&nbsp;to&nbsp;known&nbsp;data&nbsp;points.<br>
+&nbsp;<br>
+Before&nbsp;generating&nbsp;fields,&nbsp;the&nbsp;`set_block_sizes`&nbsp;and&nbsp;`set_weight_param`&nbsp;methods&nbsp;must&nbsp;be&nbsp;called&nbsp;to&nbsp;initialize&nbsp;the&nbsp;simulation&nbsp;and&nbsp;conditioning&nbsp;parameters.<br>
+&nbsp;<br>
+Attributes:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_min_x&nbsp;(float):&nbsp;Minimum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;x-direction.&nbsp;The&nbsp;range&nbsp;in&nbsp;x-direction&nbsp;for&nbsp;each&nbsp;realization&nbsp;is&nbsp;randomly&nbsp;sampled&nbsp;between&nbsp;`range_min_x`&nbsp;and&nbsp;`range_max_x`.&nbsp;Similarly,&nbsp;the&nbsp;range&nbsp;in&nbsp;y-direction&nbsp;is&nbsp;randomly&nbsp;sampled&nbsp;between&nbsp;`range_min_y`&nbsp;and&nbsp;`range_max_y`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_max_x&nbsp;(float):&nbsp;Maximum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;x-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_min_y&nbsp;(float):&nbsp;Minimum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;y-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_max_y&nbsp;(float):&nbsp;Maximum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;y-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scale_min&nbsp;(float):&nbsp;Minimum&nbsp;vertical&nbsp;scaling&nbsp;(standard&nbsp;deviation).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scale_max&nbsp;(float):&nbsp;Maximum&nbsp;vertical&nbsp;scaling&nbsp;(standard&nbsp;deviation).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;nugget_max&nbsp;(float):&nbsp;Maximum&nbsp;nugget&nbsp;effect.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;model_name&nbsp;(str):&nbsp;The&nbsp;variogram&nbsp;model&nbsp;type&nbsp;('Gaussian',&nbsp;'Exponential',&nbsp;or&nbsp;'Matern').<br>
+&nbsp;&nbsp;&nbsp;&nbsp;isotropic&nbsp;(bool):&nbsp;Flag&nbsp;for&nbsp;isotropic&nbsp;(True)&nbsp;or&nbsp;anisotropic&nbsp;(False)&nbsp;fields.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;smoothness&nbsp;(float):&nbsp;Smoothness&nbsp;parameter&nbsp;for&nbsp;the&nbsp;Matern&nbsp;model.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rng_seed&nbsp;(int):&nbsp;Seed&nbsp;for&nbsp;the&nbsp;random&nbsp;number&nbsp;generator.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rng&nbsp;(np.random.Generator):&nbsp;The&nbsp;random&nbsp;number&nbsp;generator&nbsp;instance.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;pairs&nbsp;(list[tuple]):&nbsp;List&nbsp;of&nbsp;(block_width,&nbsp;block_height)&nbsp;tuples&nbsp;generated&nbsp;by&nbsp;`set_block_sizes`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;logistic_param&nbsp;(list[float]):&nbsp;Parameters&nbsp;[L,&nbsp;x0,&nbsp;k,&nbsp;offset]&nbsp;for&nbsp;the&nbsp;logistic&nbsp;weighting&nbsp;function.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;max_dist&nbsp;(float):&nbsp;Maximum&nbsp;distance&nbsp;used&nbsp;for&nbsp;scaling&nbsp;the&nbsp;logistic&nbsp;weighting&nbsp;mask.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;Spatial&nbsp;resolution&nbsp;of&nbsp;the&nbsp;grid&nbsp;for&nbsp;conditioning.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;edge_masks&nbsp;(np.ndarray):&nbsp;Precomputed&nbsp;masks&nbsp;for&nbsp;applying&nbsp;conditioning&nbsp;weights&nbsp;at&nbsp;edges.<br>&nbsp;</span></td></tr>
 <tr><td>&nbsp;</td>
 <td class="singlecolumn">Methods defined here:<br>
-<dl><dt><a name="RandField-__init__"><strong>__init__</strong></a>(self, range_max_x, range_max_y, range_min_x, range_min_y, scale_min, scale_max, nugget_max, model_name, isotropic, smoothness=None, rng='default')</dt><dd><span class="code">Initialize&nbsp;a&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;for&nbsp;generating&nbsp;conditional&nbsp;or&nbsp;unconditional&nbsp;random&nbsp;field.<br>
+<dl><dt><a name="RandField-__init__"><strong>__init__</strong></a>(self, range_min_x, range_max_x, range_min_y, range_max_y, scale_min, scale_max, nugget_max, model_name, isotropic, smoothness=None, rng_seed=None)</dt><dd><span class="code">Initializes&nbsp;the&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>.<br>
+&nbsp;<br>
+This&nbsp;method&nbsp;sets&nbsp;up&nbsp;the&nbsp;parameters&nbsp;for&nbsp;generating&nbsp;random&nbsp;fields&nbsp;based&nbsp;on&nbsp;specified&nbsp;spatial&nbsp;correlation&nbsp;ranges,&nbsp;variogram&nbsp;model&nbsp;type,&nbsp;and&nbsp;scaling.&nbsp;Anisotropy&nbsp;and&nbsp;nugget&nbsp;effects&nbsp;can&nbsp;be&nbsp;included.&nbsp;<br>
+A&nbsp;NumPy&nbsp;random&nbsp;number&nbsp;generator&nbsp;is&nbsp;initialized&nbsp;using&nbsp;`np.random.default_rng()`,&nbsp;and&nbsp;seeds&nbsp;to&nbsp;this&nbsp;generator&nbsp;is&nbsp;optional.&nbsp;<br>
+The&nbsp;maximum&nbsp;range&nbsp;values&nbsp;must&nbsp;be&nbsp;greater&nbsp;than&nbsp;or&nbsp;equal&nbsp;to&nbsp;the&nbsp;corresponding&nbsp;minimums,&nbsp;and&nbsp;a&nbsp;`smoothness`&nbsp;value&nbsp;is&nbsp;required&nbsp;if&nbsp;`model_name`&nbsp;is&nbsp;'Matern'.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;range_max_x&nbsp;(float):&nbsp;Maximum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;x-direction.&nbsp;The&nbsp;random&nbsp;field&nbsp;will&nbsp;randomly&nbsp;sampled&nbsp;between&nbsp;range_max_x&nbsp;and&nbsp;range_min_x&nbsp;to&nbsp;determine&nbsp;its&nbsp;range&nbsp;in&nbsp;the&nbsp;x&nbsp;direction,&nbsp;and&nbsp;similarly&nbsp;for&nbsp;range&nbsp;in&nbsp;y&nbsp;direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;range_max_y&nbsp;(float):&nbsp;Maximum&nbsp;range&nbsp;in&nbsp;y-direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;range_min_x&nbsp;(float):&nbsp;Minimum&nbsp;range&nbsp;in&nbsp;x-direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;range_min_y&nbsp;(float):&nbsp;Minimum&nbsp;range&nbsp;in&nbsp;y-direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;scale_min&nbsp;(float):&nbsp;Minimum&nbsp;vertical&nbsp;scaling&nbsp;(std&nbsp;dev)&nbsp;of&nbsp;field.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;scale_max&nbsp;(float):&nbsp;Maximum&nbsp;vertical&nbsp;scaling&nbsp;of&nbsp;field.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_min_x&nbsp;(float):&nbsp;Minimum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;the&nbsp;x-direction.&nbsp;The&nbsp;actual&nbsp;range&nbsp;is&nbsp;randomly&nbsp;sampled&nbsp;between&nbsp;`range_min_x`&nbsp;and&nbsp;`range_max_x`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_max_x&nbsp;(float):&nbsp;Maximum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;the&nbsp;x-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_min_y&nbsp;(float):&nbsp;Minimum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;the&nbsp;y-direction.&nbsp;The&nbsp;actual&nbsp;range&nbsp;is&nbsp;randomly&nbsp;sampled&nbsp;between&nbsp;`range_min_y`&nbsp;and&nbsp;`range_max_y`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;range_max_y&nbsp;(float):&nbsp;Maximum&nbsp;spatial&nbsp;correlation&nbsp;range&nbsp;in&nbsp;the&nbsp;y-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scale_min&nbsp;(float):&nbsp;Minimum&nbsp;vertical&nbsp;scaling&nbsp;(standard&nbsp;deviation)&nbsp;of&nbsp;the&nbsp;random&nbsp;field.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scale_max&nbsp;(float):&nbsp;Maximum&nbsp;vertical&nbsp;scaling&nbsp;(standard&nbsp;deviation)&nbsp;of&nbsp;the&nbsp;random&nbsp;field.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;nugget_max&nbsp;(float):&nbsp;Maximum&nbsp;nugget&nbsp;effect&nbsp;in&nbsp;the&nbsp;variogram.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;model_name&nbsp;(str):&nbsp;Variogram&nbsp;model&nbsp;type&nbsp;('Gaussian',&nbsp;'Exponential',&nbsp;'Matern').<br>
-&nbsp;&nbsp;&nbsp;&nbsp;isotropic&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;enforce&nbsp;isotropic&nbsp;spatial&nbsp;correlation.&nbsp;If&nbsp;isotropic&nbsp;is&nbsp;set&nbsp;to&nbsp;False,&nbsp;then&nbsp;fields&nbsp;with&nbsp;random&nbsp;anistropy&nbsp;direction&nbsp;will&nbsp;be&nbsp;generated,&nbsp;where&nbsp;the&nbsp;strength&nbsp;of&nbsp;anistropy&nbsp;is&nbsp;dependent&nbsp;on&nbsp;the&nbsp;ratio&nbsp;between&nbsp;range&nbsp;in&nbsp;x-direction&nbsp;and&nbsp;in&nbsp;y-direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;smoothness&nbsp;(float):&nbsp;Variogram&nbsp;smoothness&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;rng&nbsp;(str&nbsp;or&nbsp;Generator):&nbsp;(optional)&nbsp;Random&nbsp;number&nbsp;generator&nbsp;or&nbsp;string&nbsp;'default'.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;model_name&nbsp;(str):&nbsp;The&nbsp;variogram&nbsp;model&nbsp;type&nbsp;used&nbsp;for&nbsp;defining&nbsp;spatial&nbsp;covariance&nbsp;('Gaussian',&nbsp;'Exponential',&nbsp;or&nbsp;'Matern').<br>
+&nbsp;&nbsp;&nbsp;&nbsp;isotropic&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;enforces&nbsp;isotropic&nbsp;spatial&nbsp;correlation.&nbsp;If&nbsp;False,&nbsp;generates&nbsp;fields&nbsp;with&nbsp;random&nbsp;anisotropy,&nbsp;where&nbsp;the&nbsp;strength&nbsp;depends&nbsp;on&nbsp;the&nbsp;ratio&nbsp;between&nbsp;x-&nbsp;and&nbsp;y-direction&nbsp;ranges.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;smoothness&nbsp;(float,&nbsp;optional):&nbsp;The&nbsp;smoothness&nbsp;parameter&nbsp;for&nbsp;the&nbsp;Matern&nbsp;variogram&nbsp;model.&nbsp;Required&nbsp;if&nbsp;`model_name='Matern'`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rng_seed&nbsp;(int,&nbsp;optional):&nbsp;The&nbsp;seed&nbsp;for&nbsp;the&nbsp;NumPy&nbsp;random&nbsp;number&nbsp;generator.&nbsp;If&nbsp;None,&nbsp;a&nbsp;random&nbsp;seed&nbsp;is&nbsp;used.&nbsp;If&nbsp;a&nbsp;seed&nbsp;is&nbsp;used,&nbsp;the&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;will&nbsp;produce&nbsp;a&nbsp;fixed&nbsp;sequence&nbsp;of&nbsp;conditional&nbsp;/&nbsp;unconditional&nbsp;random&nbsp;fields.&nbsp;Pass&nbsp;the&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;to&nbsp;two&nbsp;different&nbsp;MCMC&nbsp;<a href="#chain">chain</a>&nbsp;will&nbsp;not&nbsp;"re-initiate"&nbsp;the&nbsp;random&nbsp;generator.</span></dd></dl>
 
-<dl><dt><a name="RandField-get_block_sizes"><strong>get_block_sizes</strong></a>(self)</dt></dl>
-
-<dl><dt><a name="RandField-get_crf_weight"><strong>get_crf_weight</strong></a>(self, xx, yy, cond_data_mask)</dt><dd><span class="code">Generate&nbsp;conditional&nbsp;random&nbsp;field&nbsp;weights&nbsp;from&nbsp;conditioning&nbsp;data&nbsp;mask.<br>
-&nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;xx&nbsp;(2D&nbsp;array):&nbsp;x-coordinate&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;yy&nbsp;(2D&nbsp;array):&nbsp;y-coordinate&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;cond_data_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;of&nbsp;conditioning&nbsp;data&nbsp;(1&nbsp;=&nbsp;present).<br>
+<dl><dt><a name="RandField-get_block_sizes"><strong>get_block_sizes</strong></a>(self)</dt><dd><span class="code">Internal&nbsp;function.&nbsp;Calculate&nbsp;the&nbsp;discrete&nbsp;block&nbsp;sizes&nbsp;from&nbsp;set_block_size()<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;weight&nbsp;(2D&nbsp;array):&nbsp;weight&nbsp;used&nbsp;to&nbsp;condition&nbsp;the&nbsp;field&nbsp;to&nbsp;conditioning&nbsp;data<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dist&nbsp;(2D&nbsp;array):&nbsp;Distance&nbsp;to&nbsp;conditioning&nbsp;points.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dist_rescale&nbsp;(2D&nbsp;array):&nbsp;Scaled&nbsp;distances,&nbsp;where&nbsp;0&nbsp;correspond&nbsp;to&nbsp;0,&nbsp;and&nbsp;1&nbsp;correspond&nbsp;to&nbsp;self.<strong>max_dist</strong>.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dist_logi&nbsp;(2D&nbsp;array):&nbsp;The&nbsp;raw&nbsp;logistic&nbsp;function&nbsp;values</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;pairs&nbsp;(np.ndarray)&nbsp;:&nbsp;An&nbsp;array&nbsp;of&nbsp;shape&nbsp;(2,&nbsp;N)&nbsp;containing&nbsp;the&nbsp;discrete&nbsp;block&nbsp;sizes.&nbsp;The&nbsp;first&nbsp;row&nbsp;holds&nbsp;the&nbsp;widths&nbsp;and&nbsp;the&nbsp;second&nbsp;row&nbsp;holds&nbsp;the&nbsp;heights.</span></dd></dl>
 
-<dl><dt><a name="RandField-get_crf_weight_from_dist"><strong>get_crf_weight_from_dist</strong></a>(self, xx, yy, dist)</dt><dd><span class="code">Generate&nbsp;conditional&nbsp;random&nbsp;field&nbsp;weights&nbsp;from&nbsp;calculated&nbsp;distance.&nbsp;<br>
-Used&nbsp;in&nbsp;large&nbsp;domain&nbsp;where&nbsp;calculating&nbsp;distance&nbsp;takes&nbsp;too&nbsp;long&nbsp;and&nbsp;thus&nbsp;the&nbsp;distance&nbsp;could&nbsp;be&nbsp;previously&nbsp;saved&nbsp;in&nbsp;files<br>
+<dl><dt><a name="RandField-get_crf_weight"><strong>get_crf_weight</strong></a>(self, xx, yy, cond_data_mask)</dt><dd><span class="code">This&nbsp;method&nbsp;generates&nbsp;weights&nbsp;for&nbsp;a&nbsp;conditional&nbsp;random&nbsp;field&nbsp;using&nbsp;a&nbsp;mask&nbsp;showing&nbsp;locations&nbsp;of&nbsp;the&nbsp;conditioning&nbsp;data.&nbsp;<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;xx&nbsp;(2D&nbsp;array):&nbsp;x-coordinate&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;yy&nbsp;(2D&nbsp;array):&nbsp;y-coordinate&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;cond_data_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;of&nbsp;conditioning&nbsp;data&nbsp;(1&nbsp;=&nbsp;present).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dist&nbsp;(2D&nbsp;array):&nbsp;Distance&nbsp;to&nbsp;conditioning&nbsp;points.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;xx&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;grid's&nbsp;x-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;yy&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;grid's&nbsp;y-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cond_data_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;showing&nbsp;locations&nbsp;of&nbsp;conditioning&nbsp;data.&nbsp;(1&nbsp;=&nbsp;have&nbsp;data,&nbsp;0&nbsp;=&nbsp;do&nbsp;not&nbsp;have&nbsp;data)<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;weight&nbsp;(2D&nbsp;array):&nbsp;weight&nbsp;used&nbsp;to&nbsp;condition&nbsp;the&nbsp;field&nbsp;to&nbsp;conditioning&nbsp;data<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dist_rescale&nbsp;(2D&nbsp;array):&nbsp;Scaled&nbsp;distances,&nbsp;where&nbsp;0&nbsp;correspond&nbsp;to&nbsp;0,&nbsp;and&nbsp;1&nbsp;correspond&nbsp;to&nbsp;self.<strong>max_dist</strong>.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dist_logi&nbsp;(2D&nbsp;array):&nbsp;The&nbsp;raw&nbsp;logistic&nbsp;function&nbsp;values</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;weight&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;final&nbsp;conditioning&nbsp;weights.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dist&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;minimal&nbsp;distance&nbsp;to&nbsp;the&nbsp;closest&nbsp;conditioning&nbsp;data.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dist_rescale&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;distance&nbsp;array&nbsp;scaled&nbsp;such&nbsp;that&nbsp;`self.<strong>max_dist</strong>`&nbsp;maps&nbsp;to&nbsp;1.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dist_logi&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;raw&nbsp;output&nbsp;of&nbsp;the&nbsp;logistic&nbsp;function&nbsp;applied&nbsp;to&nbsp;the&nbsp;rescaled&nbsp;distances.</span></dd></dl>
 
-<dl><dt><a name="RandField-get_edge_masks"><strong>get_edge_masks</strong></a>(self)</dt></dl>
-
-<dl><dt><a name="RandField-get_random_field"><strong>get_random_field</strong></a>(self, X, Y, _mean=0, _var=1, n=1)</dt><dd><span class="code">Generate&nbsp;a&nbsp;random&nbsp;field&nbsp;using&nbsp;specified&nbsp;model&nbsp;parameter&nbsp;when&nbsp;initiating&nbsp;the&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>.<br>
+<dl><dt><a name="RandField-get_crf_weight_from_dist"><strong>get_crf_weight_from_dist</strong></a>(self, xx, yy, dist)</dt><dd><span class="code">This&nbsp;method&nbsp;generates&nbsp;weights&nbsp;for&nbsp;a&nbsp;conditional&nbsp;random&nbsp;field&nbsp;using&nbsp;a&nbsp;distance&nbsp;array&nbsp;that&nbsp;has&nbsp;already&nbsp;been&nbsp;computed.&nbsp;<br>
+It&nbsp;is&nbsp;useful&nbsp;for&nbsp;large&nbsp;domains&nbsp;where&nbsp;calculating&nbsp;distances&nbsp;on-the-fly&nbsp;is&nbsp;computationally&nbsp;expensive,&nbsp;allowing&nbsp;the&nbsp;distance&nbsp;array&nbsp;to&nbsp;be&nbsp;loaded&nbsp;from&nbsp;a&nbsp;file&nbsp;instead.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;(1D&nbsp;numpy&nbsp;array):&nbsp;x-coordinates&nbsp;of&nbsp;the&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;(1D&nbsp;numpy&nbsp;array):&nbsp;y-coordinates&nbsp;of&nbsp;the&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;_mean&nbsp;(float):&nbsp;Mean&nbsp;of&nbsp;the&nbsp;field.&nbsp;Default&nbsp;is&nbsp;0.&nbsp;Do&nbsp;not&nbsp;change&nbsp;it<br>
-&nbsp;&nbsp;&nbsp;&nbsp;_var&nbsp;(float):&nbsp;Variance&nbsp;of&nbsp;the&nbsp;field.&nbsp;Default&nbsp;is&nbsp;1.&nbsp;Do&nbsp;not&nbsp;change&nbsp;it<br>
+&nbsp;&nbsp;&nbsp;&nbsp;xx&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;grid's&nbsp;x-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;yy&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;grid's&nbsp;y-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dist&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;containing&nbsp;the&nbsp;pre-calculated&nbsp;distance&nbsp;to&nbsp;the&nbsp;nearest&nbsp;conditioning&nbsp;point&nbsp;for&nbsp;each&nbsp;grid&nbsp;cell.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;field&nbsp;(2D&nbsp;numpy&nbsp;array):&nbsp;Realization&nbsp;of&nbsp;the&nbsp;random&nbsp;field.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;weight&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;final&nbsp;conditioning&nbsp;weights.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dist&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;original,&nbsp;unmodified&nbsp;distance&nbsp;array&nbsp;passed&nbsp;to&nbsp;the&nbsp;function.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dist_rescale&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;distance&nbsp;array&nbsp;scaled&nbsp;such&nbsp;that&nbsp;`self.<strong>max_dist</strong>`&nbsp;maps&nbsp;to&nbsp;1.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dist_logi&nbsp;(np.ndarray):&nbsp;2D&nbsp;array.&nbsp;The&nbsp;raw&nbsp;output&nbsp;of&nbsp;the&nbsp;logistic&nbsp;function&nbsp;applied&nbsp;to&nbsp;the&nbsp;rescaled&nbsp;distances.</span></dd></dl>
+
+<dl><dt><a name="RandField-get_edge_masks"><strong>get_edge_masks</strong></a>(self)</dt><dd><span class="code">Generate&nbsp;block-edge&nbsp;conditioning&nbsp;masks&nbsp;for&nbsp;each&nbsp;block&nbsp;size.<br>
+For&nbsp;each&nbsp;block&nbsp;defined&nbsp;in&nbsp;``pairs``,&nbsp;this&nbsp;method&nbsp;computes&nbsp;a&nbsp;distance-based&nbsp;logistic&nbsp;weighting&nbsp;mask&nbsp;along&nbsp;the&nbsp;block&nbsp;edges.&nbsp;The&nbsp;resulting&nbsp;masks&nbsp;are&nbsp;used&nbsp;for&nbsp;conditioning&nbsp;random&nbsp;fields&nbsp;near&nbsp;block&nbsp;boundaries.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;edge_masks&nbsp;(list&nbsp;:&nbsp;List&nbsp;of&nbsp;2D&nbsp;arrays&nbsp;representing&nbsp;edge&nbsp;conditioning&nbsp;masks&nbsp;for&nbsp;each&nbsp;block&nbsp;size.</span></dd></dl>
+
+<dl><dt><a name="RandField-get_random_field"><strong>get_random_field</strong></a>(self, X, Y, n=1)</dt><dd><span class="code">Generates&nbsp;random&nbsp;field&nbsp;realizations.<br>
+&nbsp;<br>
+This&nbsp;method&nbsp;samples&nbsp;variogram&nbsp;parameters&nbsp;(e.g.,&nbsp;range,&nbsp;sill,&nbsp;nugget)&nbsp;from&nbsp;the&nbsp;ranges&nbsp;specified&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;attributes.<br>
+It&nbsp;then&nbsp;creates&nbsp;one&nbsp;or&nbsp;more&nbsp;spatial&nbsp;random&nbsp;fields&nbsp;on&nbsp;the&nbsp;provided&nbsp;grid&nbsp;using&nbsp;the&nbsp;selected&nbsp;covariance&nbsp;model.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;X&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;the&nbsp;grid's&nbsp;x-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;Y&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;the&nbsp;grid's&nbsp;y-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n&nbsp;(int,&nbsp;optional):&nbsp;The&nbsp;number&nbsp;of&nbsp;random&nbsp;field&nbsp;realizations&nbsp;to&nbsp;generate.&nbsp;Defaults&nbsp;to&nbsp;1.<br>
+&nbsp;<br>
+Returns:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;np.ndarray:&nbsp;A&nbsp;3D&nbsp;array&nbsp;of&nbsp;shape&nbsp;(n,&nbsp;len(Y),&nbsp;len(X))&nbsp;containing&nbsp;the&nbsp;generated&nbsp;random&nbsp;fields.</span></dd></dl>
 
 <dl><dt><a name="RandField-get_rfblock"><strong>get_rfblock</strong></a>(self)</dt><dd><span class="code">Generate&nbsp;a&nbsp;random&nbsp;field&nbsp;block&nbsp;based&nbsp;on&nbsp;the&nbsp;information&nbsp;stored&nbsp;in&nbsp;the&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>.<br>
 The&nbsp;block&nbsp;size&nbsp;is&nbsp;randomly&nbsp;selected&nbsp;from&nbsp;values&nbsp;defined&nbsp;in&nbsp;<a href="#RandField-set_block_sizes">set_block_sizes</a>()&nbsp;function.&nbsp;<br>
@@ -123,34 +158,38 @@ The&nbsp;random&nbsp;field&nbsp;has&nbsp;a&nbsp;logistic&nbsp;decay&nbsp;to&nbsp
 Returns:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;f&nbsp;(2D&nbsp;numpy&nbsp;array):&nbsp;a&nbsp;random&nbsp;field&nbsp;sample&nbsp;shaped&nbsp;by&nbsp;logistic&nbsp;mask.</span></dd></dl>
 
-<dl><dt><a name="RandField-logistic"><strong>logistic</strong></a>(x, L, x0, k)</dt></dl>
-
-<dl><dt><a name="RandField-min_dist"><strong>min_dist</strong></a>(hard_mat, xx, yy)</dt></dl>
-
-<dl><dt><a name="RandField-rescale"><strong>rescale</strong></a>(x, maxdist)</dt></dl>
-
-<dl><dt><a name="RandField-set_block_param"><strong>set_block_param</strong></a>(self, logis_func_L, logis_func_x0, logis_func_k, logis_func_offset, max_dist, resolution)</dt><dd><span class="code">Set&nbsp;logistic&nbsp;function&nbsp;parameters&nbsp;for&nbsp;generating&nbsp;conditioning&nbsp;weight&nbsp;used&nbsp;on&nbsp;both&nbsp;conditioning&nbsp;to&nbsp;the&nbsp;data&nbsp;and&nbsp;conditioning&nbsp;to&nbsp;the&nbsp;edge&nbsp;of&nbsp;the&nbsp;block<br>
-The&nbsp;logistic&nbsp;function&nbsp;has&nbsp;a&nbsp;format&nbsp;of&nbsp;f(x)&nbsp;=&nbsp;(L&nbsp;/&nbsp;(1&nbsp;+&nbsp;exp(-k(x&nbsp;-&nbsp;x0))))&nbsp;-&nbsp;offset,&nbsp;where&nbsp;the&nbsp;x&nbsp;here&nbsp;represent&nbsp;the&nbsp;distance&nbsp;to&nbsp;the&nbsp;nearest&nbsp;conditioning&nbsp;data<br>
-In&nbsp;the&nbsp;generated&nbsp;conditioning&nbsp;weight,&nbsp;the&nbsp;weight&nbsp;is&nbsp;highest&nbsp;(1)&nbsp;at&nbsp;the&nbsp;conditioning&nbsp;data,&nbsp;and&nbsp;has&nbsp;a&nbsp;logistic&nbsp;decay&nbsp;based&nbsp;on&nbsp;distance&nbsp;to&nbsp;the&nbsp;nearest&nbsp;conditioning&nbsp;data<br>
+<dl><dt><a name="RandField-logistic"><strong>logistic</strong></a>(x, L, x0, k)</dt><dd><span class="code">Evaluate&nbsp;the&nbsp;logistic&nbsp;function&nbsp;with&nbsp;given&nbsp;parameters.<br>
 &nbsp;<br>
-&nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;logis_func_L&nbsp;(float):&nbsp;L&nbsp;parameter&nbsp;of&nbsp;logistic&nbsp;function.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;logis_func_x0&nbsp;(float):&nbsp;Midpoint&nbsp;x0&nbsp;of&nbsp;logistic&nbsp;function.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;logis_func_k&nbsp;(float):&nbsp;Growth&nbsp;rate&nbsp;k&nbsp;of&nbsp;logistic&nbsp;function.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;logis_func_offset&nbsp;(float):&nbsp;Constant&nbsp;subtracted&nbsp;from&nbsp;logistic&nbsp;output.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;max_dist&nbsp;(float):&nbsp;Max&nbsp;distance&nbsp;for&nbsp;mask&nbsp;scaling.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;Grid&nbsp;cell&nbsp;resolution.</span></dd></dl>
+Notes:&nbsp;is&nbsp;an&nbsp;internal&nbsp;helper&nbsp;function&nbsp;and&nbsp;not&nbsp;intended&nbsp;for&nbsp;direct&nbsp;use.</span></dd></dl>
 
-<dl><dt><a name="RandField-set_block_sizes"><strong>set_block_sizes</strong></a>(self, min_block_x, max_block_x, min_block_y, max_block_y, steps=5)</dt><dd><span class="code">Set&nbsp;the&nbsp;allowable&nbsp;range&nbsp;of&nbsp;block&nbsp;sizes&nbsp;used&nbsp;for&nbsp;random&nbsp;field&nbsp;generation.<br>
-The&nbsp;function&nbsp;has&nbsp;no&nbsp;returned&nbsp;value.&nbsp;But&nbsp;the&nbsp;effect&nbsp;can&nbsp;be&nbsp;evaluated&nbsp;by&nbsp;the&nbsp;'pair'&nbsp;attribute&nbsp;of&nbsp;the&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a><br>
+<dl><dt><a name="RandField-min_dist"><strong>min_dist</strong></a>(hard_mat, xx, yy)</dt><dd><span class="code">Compute&nbsp;the&nbsp;minimum&nbsp;Euclidean&nbsp;distance&nbsp;to&nbsp;non-NaN&nbsp;points.<br>
+&nbsp;<br>
+Notes:&nbsp;This&nbsp;is&nbsp;an&nbsp;internal&nbsp;helper&nbsp;function&nbsp;and&nbsp;not&nbsp;intended&nbsp;for&nbsp;direct&nbsp;use.</span></dd></dl>
+
+<dl><dt><a name="RandField-rescale"><strong>rescale</strong></a>(x, maxdist)</dt><dd><span class="code">Rescale&nbsp;distance&nbsp;values&nbsp;by&nbsp;the&nbsp;specified&nbsp;maximum&nbsp;distance.<br>
+&nbsp;<br>
+Notes:&nbsp;This&nbsp;is&nbsp;an&nbsp;internal&nbsp;helper&nbsp;function&nbsp;and&nbsp;not&nbsp;intended&nbsp;for&nbsp;direct&nbsp;use.</span></dd></dl>
+
+<dl><dt><a name="RandField-set_block_sizes"><strong>set_block_sizes</strong></a>(self, min_block_x, max_block_x, min_block_y, max_block_y, steps=5)</dt><dd><span class="code">Defines&nbsp;the&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;block&nbsp;dimensions&nbsp;in&nbsp;x&nbsp;and&nbsp;y&nbsp;directions&nbsp;and&nbsp;determines&nbsp;the&nbsp;number&nbsp;of&nbsp;discrete&nbsp;block&nbsp;sizes&nbsp;between&nbsp;them.&nbsp;This&nbsp;method&nbsp;does&nbsp;not&nbsp;return&nbsp;a&nbsp;value;&nbsp;the&nbsp;resulting&nbsp;block&nbsp;size&nbsp;pairs&nbsp;are&nbsp;stored&nbsp;in&nbsp;the&nbsp;``pairs``&nbsp;attribute.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;min_block_x&nbsp;(int):&nbsp;Minimum&nbsp;block&nbsp;width.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;max_block_x&nbsp;(int):&nbsp;Maximum&nbsp;block&nbsp;width.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;min_block_y&nbsp;(int):&nbsp;Minimum&nbsp;block&nbsp;height.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;max_block_y&nbsp;(int):&nbsp;Maximum&nbsp;block&nbsp;height.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;steps&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;steps&nbsp;between&nbsp;min&nbsp;and&nbsp;max,&nbsp;determining&nbsp;number&nbsp;of&nbsp;different&nbsp;sizes&nbsp;between&nbsp;min_x&nbsp;and&nbsp;max_x&nbsp;or&nbsp;between&nbsp;min_y&nbsp;and&nbsp;max_y&nbsp;Default&nbsp;is&nbsp;5.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;min_block_x&nbsp;(int):&nbsp;The&nbsp;minimum&nbsp;block&nbsp;width.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;max_block_x&nbsp;(int):&nbsp;The&nbsp;maximum&nbsp;block&nbsp;width.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;min_block_y&nbsp;(int):&nbsp;The&nbsp;minimum&nbsp;block&nbsp;height.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;max_block_y&nbsp;(int):&nbsp;The&nbsp;maximum&nbsp;block&nbsp;height.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps&nbsp;(int,&nbsp;optional):&nbsp;The&nbsp;number&nbsp;of&nbsp;size&nbsp;intervals&nbsp;between&nbsp;the&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;values.&nbsp;Defaults&nbsp;to&nbsp;5.</span></dd></dl>
+
+<dl><dt><a name="RandField-set_weight_param"><strong>set_weight_param</strong></a>(self, logis_func_L, logis_func_x0, logis_func_k, logis_func_offset, max_dist, resolution)</dt><dd><span class="code">Set&nbsp;logistic&nbsp;function&nbsp;parameters&nbsp;for&nbsp;computing&nbsp;conditioning&nbsp;weights.<br>
+&nbsp;<br>
+The&nbsp;logistic&nbsp;function&nbsp;is&nbsp;defined&nbsp;as&nbsp;``f(x)&nbsp;=&nbsp;(L&nbsp;/&nbsp;(1&nbsp;+&nbsp;exp(-k(x&nbsp;-&nbsp;x0))))&nbsp;-&nbsp;offset``,&nbsp;where&nbsp;``x``&nbsp;is&nbsp;the&nbsp;distance&nbsp;to&nbsp;the&nbsp;nearest&nbsp;conditioning&nbsp;data&nbsp;point.&nbsp;The&nbsp;resulting&nbsp;weight&nbsp;equals&nbsp;1&nbsp;at&nbsp;conditioning&nbsp;data&nbsp;locations&nbsp;and&nbsp;decays&nbsp;logistically&nbsp;with&nbsp;distance&nbsp;'x'.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;logis_func_L&nbsp;(float):&nbsp;The&nbsp;upper&nbsp;limit&nbsp;(L)&nbsp;of&nbsp;the&nbsp;logistic&nbsp;function.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;logis_func_x0&nbsp;(float):&nbsp;The&nbsp;distance&nbsp;value&nbsp;(x0)&nbsp;where&nbsp;the&nbsp;function&nbsp;reaches&nbsp;its&nbsp;midpoint.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;logis_func_k&nbsp;(float):&nbsp;The&nbsp;growth&nbsp;rate&nbsp;(k)&nbsp;of&nbsp;the&nbsp;logistic&nbsp;curve.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;logis_func_offset&nbsp;(float):&nbsp;A&nbsp;constant&nbsp;offset&nbsp;subtracted&nbsp;from&nbsp;the&nbsp;logistic&nbsp;function's&nbsp;output.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;max_dist&nbsp;(float):&nbsp;The&nbsp;maximum&nbsp;distance&nbsp;used&nbsp;for&nbsp;scaling&nbsp;the&nbsp;weighting&nbsp;mask.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;The&nbsp;spatial&nbsp;resolution&nbsp;of&nbsp;the&nbsp;grid.</span></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -166,71 +205,82 @@ Data descriptors defined here:<br>
 <td class="section-title" colspan=3>&nbsp;<br><a name="chain">class <strong>chain</strong></a>(<a href="builtins.html#object">builtins.object</a>)</td></tr>
     
 <tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
-<td class="decor title-decor" colspan=2><span class="code"><a href="#chain">chain</a>(xx,&nbsp;yy,&nbsp;bed,&nbsp;surf,&nbsp;velx,&nbsp;vely,&nbsp;dhdt,&nbsp;smb,&nbsp;cond_bed,&nbsp;data_mask,&nbsp;grounded_ice_mask,&nbsp;resolution)<br>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#chain">chain</a>(xx,&nbsp;yy,&nbsp;initial_bed,&nbsp;surf,&nbsp;velx,&nbsp;vely,&nbsp;dhdt,&nbsp;smb,&nbsp;cond_bed,&nbsp;data_mask,&nbsp;grounded_ice_mask,&nbsp;resolution)<br>
 &nbsp;<br>
-parent&nbsp;class&nbsp;for&nbsp;both&nbsp;the&nbsp;crf_chain&nbsp;and&nbsp;sgs_chain<br>&nbsp;</span></td></tr>
+A&nbsp;base&nbsp;class&nbsp;for&nbsp;setting&nbsp;up&nbsp;a&nbsp;Markov&nbsp;<a href="#chain">chain</a>&nbsp;for&nbsp;MCMC&nbsp;topography&nbsp;sampling.<br>
+&nbsp;<br>
+This&nbsp;class&nbsp;handles&nbsp;the&nbsp;initialization&nbsp;of&nbsp;data&nbsp;and&nbsp;the&nbsp;configuration&nbsp;of&nbsp;the&nbsp;loss&nbsp;function&nbsp;for&nbsp;its&nbsp;child&nbsp;classes&nbsp;(e.g.,&nbsp;crf_chain,&nbsp;sgs_chain).<br>
+&nbsp;<br>
+Parameters:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;xx,&nbsp;yy,&nbsp;initial_bed,&nbsp;surf,&nbsp;velx,&nbsp;vely,&nbsp;dhdt,&nbsp;smb,&nbsp;cond_bed,&nbsp;data_mask,&nbsp;grounded_ice_mask,&nbsp;resolution:&nbsp;As&nbsp;defined&nbsp;in&nbsp;the&nbsp;initialization&nbsp;function<br>
+&nbsp;&nbsp;&nbsp;&nbsp;update_in_region&nbsp;(bool):&nbsp;If&nbsp;'True',&nbsp;the&nbsp;block&nbsp;update&nbsp;will&nbsp;only&nbsp;happen&nbsp;within&nbsp;the&nbsp;region.&nbsp;If&nbsp;'False',&nbsp;the&nbsp;block&nbsp;update&nbsp;will&nbsp;happen&nbsp;for&nbsp;the&nbsp;entire&nbsp;map<br>
+&nbsp;&nbsp;&nbsp;&nbsp;region_mask&nbsp;(numpy.ndarray):&nbsp;The&nbsp;2D&nbsp;mask&nbsp;defining&nbsp;the&nbsp;region&nbsp;where&nbsp;block&nbsp;update&nbsp;occur&nbsp;(1&nbsp;=&nbsp;inside&nbsp;the&nbsp;region,&nbsp;0&nbsp;=&nbsp;outside&nbsp;the&nbsp;region).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mc_region_mask&nbsp;(numpy.ndarray):&nbsp;The&nbsp;2D&nbsp;mask&nbsp;defining&nbsp;the&nbsp;region&nbsp;where&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;is&nbsp;calculated&nbsp;(1&nbsp;=&nbsp;inside&nbsp;the&nbsp;region,&nbsp;0&nbsp;=&nbsp;outside&nbsp;the&nbsp;region).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_region_mask&nbsp;(numpy.ndarray):&nbsp;The&nbsp;2D&nbsp;mask&nbsp;defining&nbsp;the&nbsp;region&nbsp;where&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;is&nbsp;calculated&nbsp;(1&nbsp;=&nbsp;inside&nbsp;the&nbsp;region,&nbsp;0&nbsp;or&nbsp;np.nan&nbsp;=&nbsp;outside&nbsp;the&nbsp;region).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss,&nbsp;when&nbsp;the&nbsp;'map_func'&nbsp;is&nbsp;'sumsquare'&nbsp;(a.k.a.&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;have&nbsp;gaussian&nbsp;distributions)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss,&nbsp;when&nbsp;the&nbsp;'diff_func'&nbsp;is&nbsp;'sumsquare'&nbsp;(a.k.a.&nbsp;the&nbsp;data&nbsp;misfits&nbsp;have&nbsp;gaussian&nbsp;distributions)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;map_func&nbsp;(string):&nbsp;A&nbsp;string&nbsp;for&nbsp;choosing&nbsp;the&nbsp;function&nbsp;to&nbsp;calculate&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;loss.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;diff_func&nbsp;(string):&nbsp;A&nbsp;string&nbsp;for&nbsp;choosing&nbsp;the&nbsp;function&nbsp;to&nbsp;calculate&nbsp;for&nbsp;data&nbsp;misfit&nbsp;loss.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_function_list&nbsp;(list):&nbsp;A&nbsp;list&nbsp;of&nbsp;two&nbsp;functions&nbsp;used&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;and&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;respective.<br>&nbsp;</span></td></tr>
 <tr><td>&nbsp;</td>
 <td class="singlecolumn">Methods defined here:<br>
-<dl><dt><a name="chain-__init__"><strong>__init__</strong></a>(self, xx, yy, bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution)</dt><dd><span class="code">Initialize&nbsp;the&nbsp;Markov&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;for&nbsp;topography&nbsp;sampling.<br>
-The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns&nbsp;but&nbsp;the&nbsp;input&nbsp;argument&nbsp;are&nbsp;stored&nbsp;in&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a><br>
+<dl><dt><a name="chain-__init__"><strong>__init__</strong></a>(self, xx, yy, initial_bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution)</dt><dd><span class="code">Initializes&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>&nbsp;with&nbsp;input&nbsp;data&nbsp;and&nbsp;model&nbsp;geometry.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;xx,&nbsp;yy&nbsp;(2D&nbsp;array):&nbsp;x&nbsp;and&nbsp;y&nbsp;coordinates&nbsp;of&nbsp;the&nbsp;map&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bed&nbsp;(2D&nbsp;array):&nbsp;Initial&nbsp;bed&nbsp;topography.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;surf&nbsp;(2D&nbsp;array):&nbsp;Ice&nbsp;surface&nbsp;elevation.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;velx,&nbsp;vely&nbsp;(2D&nbsp;array):&nbsp;Ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;x&nbsp;direction&nbsp;and&nbsp;in&nbsp;y&nbsp;direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dhdt&nbsp;(2D&nbsp;array):&nbsp;Surface&nbsp;height&nbsp;change&nbsp;rate&nbsp;(annual&nbsp;average).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;smb&nbsp;(2D&nbsp;array):&nbsp;Surface&nbsp;mass&nbsp;balance&nbsp;(annual&nbsp;average).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;cond_bed&nbsp;(2D&nbsp;array):&nbsp;Conditioning&nbsp;radar&nbsp;bed&nbsp;measurements&nbsp;in&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;2D&nbsp;domain.&nbsp;For&nbsp;locations&nbsp;without&nbsp;measurement,&nbsp;the&nbsp;value&nbsp;is&nbsp;nan<br>
-&nbsp;&nbsp;&nbsp;&nbsp;data_mask&nbsp;(2D&nbsp;array):&nbsp;Mask&nbsp;of&nbsp;where&nbsp;conditioning&nbsp;data&nbsp;exists&nbsp;(1&nbsp;=&nbsp;exist).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;grounded_ice_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;of&nbsp;grounded&nbsp;ice&nbsp;(1&nbsp;=&nbsp;grounded).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;Spatial&nbsp;resolution&nbsp;in&nbsp;meters.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;xx&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;grid&nbsp;x-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;yy&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;grid&nbsp;y-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;initial_bed&nbsp;(np.ndarray):&nbsp;The&nbsp;initial&nbsp;bed&nbsp;topography&nbsp;guess.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;surf&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;elevation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;velx&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;the&nbsp;x-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;vely&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;the&nbsp;y-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dhdt&nbsp;(np.ndarray):&nbsp;The&nbsp;rate&nbsp;of&nbsp;surface&nbsp;height&nbsp;change.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;smb&nbsp;(np.ndarray):&nbsp;The&nbsp;surface&nbsp;mass&nbsp;balance.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cond_bed&nbsp;(np.ndarray):&nbsp;Conditioning&nbsp;radar&nbsp;bed&nbsp;measurements.&nbsp;Grid&nbsp;cells&nbsp;without&nbsp;data&nbsp;should&nbsp;be&nbsp;marked&nbsp;with&nbsp;NaN.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;where&nbsp;1&nbsp;indicates&nbsp;the&nbsp;presence&nbsp;of&nbsp;conditioning&nbsp;data.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;grounded_ice_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;where&nbsp;1&nbsp;indicates&nbsp;grounded&nbsp;ice.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;The&nbsp;spatial&nbsp;resolution&nbsp;of&nbsp;the&nbsp;grid&nbsp;in&nbsp;meters.<br>
 &nbsp;<br>
 Raises:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;Exception:&nbsp;If&nbsp;input&nbsp;arrays&nbsp;do&nbsp;not&nbsp;have&nbsp;matching&nbsp;shapes.</span></dd></dl>
 
-<dl><dt><a name="chain-__init_func__"><strong>__init_func__</strong></a>(self)</dt></dl>
+<dl><dt><a name="chain-__init_func__"><strong>__init_func__</strong></a>(self)</dt><dd><span class="code">A&nbsp;placeholder&nbsp;function&nbsp;for&nbsp;printing&nbsp;out&nbsp;notes&nbsp;and&nbsp;instruction&nbsp;on&nbsp;setting-up&nbsp;the&nbsp;<a href="#chain">chain</a><br>
+&nbsp;<br>
+No&nbsp;returns.</span></dd></dl>
 
-<dl><dt><a name="chain-loss"><strong>loss</strong></a>(self, massConvResidual, dataDiff)</dt><dd><span class="code">Compute&nbsp;total&nbsp;loss&nbsp;from&nbsp;mass&nbsp;conservation&nbsp;residuals&nbsp;and&nbsp;data&nbsp;misfit&nbsp;by&nbsp;applying&nbsp;function&nbsp;defined&nbsp;in&nbsp;set_loss_type<br>
+<dl><dt><a name="chain-loss"><strong>loss</strong></a>(self, massConvResidual, dataDiff)</dt><dd><span class="code">Computes&nbsp;the&nbsp;value&nbsp;of&nbsp;the&nbsp;loss&nbsp;function&nbsp;for&nbsp;a&nbsp;candidate&nbsp;topography.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;massConvResidual&nbsp;(2D&nbsp;array):&nbsp;Mass&nbsp;conservation&nbsp;residual&nbsp;field.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dataDiff&nbsp;(2D&nbsp;array):&nbsp;Difference&nbsp;between&nbsp;candidate&nbsp;and&nbsp;observed&nbsp;bed&nbsp;elevation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;massConvResidual&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;field.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dataDiff&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;difference&nbsp;between&nbsp;the&nbsp;candidate&nbsp;topography&nbsp;and&nbsp;observed&nbsp;bed&nbsp;elevation.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;total_loss&nbsp;(float):&nbsp;Combined&nbsp;loss&nbsp;value.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_mc&nbsp;(float):&nbsp;Loss&nbsp;due&nbsp;to&nbsp;mass&nbsp;conservation&nbsp;residual.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_data&nbsp;(float):&nbsp;Loss&nbsp;due&nbsp;to&nbsp;data&nbsp;misfit.</span></dd></dl>
-
-<dl><dt><a name="chain-set_high_vel_region"><strong>set_high_vel_region</strong></a>(self, update_in_region, region_mask=[])</dt><dd><span class="code">Define&nbsp;spatial&nbsp;region&nbsp;where&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;is&nbsp;high&nbsp;to&nbsp;constrain&nbsp;the&nbsp;location&nbsp;of&nbsp;updates.<br>
-&nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;update_in_region&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;constrain&nbsp;updates&nbsp;to&nbsp;region_mask.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;region_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;specifying&nbsp;region&nbsp;of&nbsp;interest.<br>
-&nbsp;<br>
-Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;region_mask&nbsp;has&nbsp;incorrect&nbsp;shape.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;total_loss&nbsp;(float):&nbsp;The&nbsp;combined,&nbsp;weighted&nbsp;loss&nbsp;value.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_mc&nbsp;(float):&nbsp;The&nbsp;loss&nbsp;component&nbsp;from&nbsp;mass&nbsp;conservation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_data&nbsp;(float):&nbsp;The&nbsp;loss&nbsp;component&nbsp;from&nbsp;data&nbsp;misfit.</span></dd></dl>
 
 <dl><dt><a name="chain-set_loss_type"><strong>set_loss_type</strong></a>(self, map_func=None, diff_func=None, sigma_mc=-1, sigma_data=-1, massConvInRegion=True, dataDiffInRegion=False)</dt><dd><span class="code">Configure&nbsp;loss&nbsp;function&nbsp;used&nbsp;in&nbsp;MCMC&nbsp;<a href="#chain">chain</a><br>
-Currently&nbsp;enable&nbsp;two&nbsp;losses&nbsp;to&nbsp;be&nbsp;used:&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;and&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements.<br>
+Currently&nbsp;enable&nbsp;either&nbsp;of&nbsp;losses&nbsp;(or&nbsp;both)&nbsp;to&nbsp;be&nbsp;used:&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;and&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements.<br>
 The&nbsp;function&nbsp;has&nbsp;no&nbsp;return.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;'loss_function_list'&nbsp;attribute<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;map_func&nbsp;(str):&nbsp;Function&nbsp;to&nbsp;use&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare',&nbsp;None).&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Default&nbsp;is&nbsp;None.&nbsp;If&nbsp;set&nbsp;to&nbsp;None,&nbsp;then&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;is&nbsp;not&nbsp;used&nbsp;for&nbsp;calculating&nbsp;the&nbsp;loss.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;'sumsquare'&nbsp;correspond&nbsp;to&nbsp;treat&nbsp;the&nbsp;residual&nbsp;as&nbsp;Gaussian&nbsp;distribution<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;diff_func&nbsp;(str):&nbsp;Function&nbsp;to&nbsp;use&nbsp;for&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare',&nbsp;None).&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Default&nbsp;is&nbsp;None.&nbsp;If&nbsp;set&nbsp;to&nbsp;None,&nbsp;then&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;is&nbsp;not&nbsp;used&nbsp;for&nbsp;calculating&nbsp;the&nbsp;loss.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;'sumsquare'&nbsp;correspond&nbsp;to&nbsp;treat&nbsp;the&nbsp;misfit&nbsp;as&nbsp;Gaussian&nbsp;distribution<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;Standard&nbsp;deviation&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;residual.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sigma_data&nbsp;(float):&nbsp;Standard&nbsp;deviation&nbsp;for&nbsp;data&nbsp;misfit.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;massConvInRegion&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;calculate&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;only&nbsp;in&nbsp;region_mask.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dataDiffInRegion&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;calculate&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;only&nbsp;in&nbsp;region_mask.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;map_func&nbsp;(str,&nbsp;optional):&nbsp;The&nbsp;aggregation&nbsp;function&nbsp;for&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare').&nbsp;'sumsquare'&nbsp;corresponds&nbsp;to&nbsp;a&nbsp;Gaussian&nbsp;likelihood.&nbsp;If&nbsp;None,&nbsp;this&nbsp;loss&nbsp;component&nbsp;is&nbsp;ignored.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;diff_func&nbsp;(str,&nbsp;optional):&nbsp;The&nbsp;aggregation&nbsp;function&nbsp;for&nbsp;the&nbsp;radar&nbsp;data&nbsp;misfit&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare').&nbsp;'sumsquare'&nbsp;corresponds&nbsp;to&nbsp;a&nbsp;Gaussian&nbsp;likelihood.&nbsp;If&nbsp;None,&nbsp;this&nbsp;loss&nbsp;component&nbsp;is&nbsp;ignored.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;The&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;likelihood.&nbsp;This&nbsp;is&nbsp;required&nbsp;if&nbsp;`map_func`&nbsp;is&nbsp;not&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_data&nbsp;(float):&nbsp;The&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;data&nbsp;misfit&nbsp;likelihood.&nbsp;This&nbsp;is&nbsp;required&nbsp;if&nbsp;`diff_func`&nbsp;is&nbsp;not&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;massConvInRegion&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;calculates&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;only&nbsp;within&nbsp;the&nbsp;specified&nbsp;`region_mask`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dataDiffInRegion&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;calculates&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;only&nbsp;within&nbsp;the&nbsp;specified&nbsp;`region_mask`.<br>
 &nbsp;<br>
 Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;function&nbsp;names&nbsp;are&nbsp;invalid&nbsp;or&nbsp;sigmas&nbsp;are&nbsp;missing.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;function&nbsp;names&nbsp;are&nbsp;invalid&nbsp;or&nbsp;required&nbsp;`sigma`&nbsp;values&nbsp;are&nbsp;not&nbsp;provided.</span></dd></dl>
+
+<dl><dt><a name="chain-set_update_region"><strong>set_update_region</strong></a>(self, update_in_region, region_mask=[])</dt><dd><span class="code">Defines&nbsp;a&nbsp;spatial&nbsp;mask&nbsp;to&nbsp;constrain&nbsp;where&nbsp;topography&nbsp;updates&nbsp;can&nbsp;occur.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;update_in_region&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;updates&nbsp;are&nbsp;restricted&nbsp;to&nbsp;the&nbsp;area&nbsp;defined&nbsp;by&nbsp;`region_mask`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;region_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;specifying&nbsp;the&nbsp;update&nbsp;region.<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;`region_mask`&nbsp;does&nbsp;not&nbsp;match&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;grid&nbsp;in&nbsp;the&nbsp;initialization.</span></dd></dl>
 
 <hr>
 Data descriptors defined here:<br>
@@ -246,9 +296,13 @@ Data descriptors defined here:<br>
 <td class="section-title" colspan=3>&nbsp;<br><a name="chain_crf">class <strong>chain_crf</strong></a>(<a href="gstatsMCMC.MCMC.html#chain">chain</a>)</td></tr>
     
 <tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
-<td class="decor title-decor" colspan=2><span class="code"><a href="#chain_crf">chain_crf</a>(xx,&nbsp;yy,&nbsp;bed,&nbsp;surf,&nbsp;velx,&nbsp;vely,&nbsp;dhdt,&nbsp;smb,&nbsp;cond_bed,&nbsp;data_mask,&nbsp;grounded_ice_mask,&nbsp;resolution)<br>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#chain_crf">chain_crf</a>(xx,&nbsp;yy,&nbsp;initial_bed,&nbsp;surf,&nbsp;velx,&nbsp;vely,&nbsp;dhdt,&nbsp;smb,&nbsp;cond_bed,&nbsp;data_mask,&nbsp;grounded_ice_mask,&nbsp;resolution)<br>
 &nbsp;<br>
-Inherit&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;class.&nbsp;Used&nbsp;for&nbsp;creating&nbsp;random&nbsp;field-based&nbsp;MCMC&nbsp;chains.&nbsp;Can&nbsp;choose&nbsp;between&nbsp;conditional&nbsp;or&nbsp;unconditional&nbsp;random&nbsp;fields<br>&nbsp;</span></td></tr>
+Inherit&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;class.&nbsp;Used&nbsp;for&nbsp;creating&nbsp;random&nbsp;field-based&nbsp;MCMC&nbsp;chains.&nbsp;Can&nbsp;choose&nbsp;between&nbsp;conditional&nbsp;or&nbsp;unconditional&nbsp;random&nbsp;fields.<br>
+&nbsp;<br>
+Parameters&nbsp;in&nbsp;addition&nbsp;to&nbsp;<a href="#chain">chain</a>'s&nbsp;parameters:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;block_type&nbsp;(String):&nbsp;Specifying&nbsp;uncondtional&nbsp;or&nbsp;conditional&nbsp;random&nbsp;field,&nbsp;'CRF_weight'&nbsp;or&nbsp;'RF'.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;crf_data_weight&nbsp;(numpy.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;data&nbsp;weight&nbsp;to&nbsp;ensure&nbsp;that&nbsp;the&nbsp;updates&nbsp;will&nbsp;not&nbsp;perturb&nbsp;the&nbsp;conditioning&nbsp;data.<br>&nbsp;</span></td></tr>
 <tr><td>&nbsp;</td>
 <td class="singlecolumn"><dl><dt>Method resolution order:</dt>
 <dd><a href="gstatsMCMC.MCMC.html#chain_crf">chain_crf</a></dd>
@@ -257,98 +311,99 @@ Inherit&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;class.&nbsp;Used&nbsp;for&
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="chain_crf-__init_func__"><strong>__init_func__</strong></a>(self)</dt></dl>
+<dl><dt><a name="chain_crf-__init_func__"><strong>__init_func__</strong></a>(self)</dt><dd><span class="code">A&nbsp;placeholder&nbsp;function&nbsp;for&nbsp;printing&nbsp;out&nbsp;notes&nbsp;and&nbsp;instruction&nbsp;on&nbsp;setting-up&nbsp;the&nbsp;<a href="#chain">chain</a><br>
+&nbsp;<br>
+No&nbsp;returns.</span></dd></dl>
 
-<dl><dt><a name="chain_crf-run"><strong>run</strong></a>(self, n_iter, RF, rng='default')</dt><dd><span class="code">Run&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>&nbsp;using&nbsp;block-based&nbsp;CRF/RF&nbsp;perturbations.<br>
+<dl><dt><a name="chain_crf-run"><strong>run</strong></a>(self, n_iter, RF, rng_seed=None, only_save_last_bed=False, info_per_iter=1000)</dt><dd><span class="code">Runs&nbsp;the&nbsp;MCMC&nbsp;sampling&nbsp;<a href="#chain">chain</a>&nbsp;to&nbsp;generate&nbsp;topography&nbsp;realizations.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;n_iter&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;iterations&nbsp;in&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;RF&nbsp;(<a href="#RandField">RandField</a>):&nbsp;Random&nbsp;field&nbsp;generator.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;rng&nbsp;(str&nbsp;or&nbsp;np.random.Generator):&nbsp;Random&nbsp;number&nbsp;generator.&nbsp;Default&nbsp;is&nbsp;'default',&nbsp;which&nbsp;makes&nbsp;a&nbsp;random&nbsp;generator&nbsp;with&nbsp;random&nbsp;seeds<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n_iter&nbsp;(int):&nbsp;The&nbsp;total&nbsp;number&nbsp;of&nbsp;MCMC&nbsp;iterations&nbsp;to&nbsp;perform.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;RF&nbsp;(<a href="#RandField">RandField</a>):&nbsp;An&nbsp;initialized&nbsp;`<a href="#RandField">RandField</a>`&nbsp;<a href="builtins.html#object">object</a>&nbsp;used&nbsp;to&nbsp;generate&nbsp;the&nbsp;topography&nbsp;perturbations.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rng_seed&nbsp;(int,&nbsp;optional):&nbsp;A&nbsp;seed&nbsp;for&nbsp;the&nbsp;random&nbsp;number&nbsp;generator&nbsp;to&nbsp;ensure&nbsp;reproducibility.&nbsp;Defaults&nbsp;to&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;only_save_last_bed&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;only&nbsp;the&nbsp;final&nbsp;topography&nbsp;is&nbsp;returned.&nbsp;If&nbsp;False,&nbsp;the&nbsp;topography&nbsp;from&nbsp;every&nbsp;iteration&nbsp;is&nbsp;saved,&nbsp;which&nbsp;requires&nbsp;more&nbsp;memory.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;info_per_iter&nbsp;(int):&nbsp;The&nbsp;iteration&nbsp;interval&nbsp;for&nbsp;printing&nbsp;progress&nbsp;updates,&nbsp;such&nbsp;as&nbsp;loss&nbsp;and&nbsp;acceptance&nbsp;rate,&nbsp;to&nbsp;the&nbsp;console.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bed_cache&nbsp;(4D&nbsp;array):&nbsp;Topography&nbsp;at&nbsp;each&nbsp;iteration.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_mc_cache&nbsp;(1D&nbsp;array):&nbsp;Mass&nbsp;conservation&nbsp;residual&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;is&nbsp;not&nbsp;used,&nbsp;return&nbsp;array&nbsp;of&nbsp;0<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_data_cache&nbsp;(1D&nbsp;array):&nbsp;Data&nbsp;misfit&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;is&nbsp;not&nbsp;used,&nbsp;return&nbsp;array&nbsp;of&nbsp;0<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_cache&nbsp;(1D&nbsp;array):&nbsp;Total&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;step_cache&nbsp;(1D&nbsp;array):&nbsp;Boolean&nbsp;indicating&nbsp;if&nbsp;the&nbsp;step&nbsp;was&nbsp;accepted.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resampled_times&nbsp;(2D&nbsp;array):&nbsp;Number&nbsp;of&nbsp;times&nbsp;each&nbsp;pixel&nbsp;was&nbsp;updated.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;blocks_cache&nbsp;(2D&nbsp;array):&nbsp;Info&nbsp;on&nbsp;block&nbsp;proposals&nbsp;at&nbsp;each&nbsp;iteration.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;bed_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;4D&nbsp;array&nbsp;of&nbsp;saved&nbsp;topographies&nbsp;if&nbsp;`only_save_last_bed`&nbsp;is&nbsp;False,&nbsp;or&nbsp;a&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;final&nbsp;topography&nbsp;if&nbsp;True.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_mc_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;no&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;is&nbsp;set,&nbsp;will&nbsp;return&nbsp;zeros.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_data_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;no&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;is&nbsp;set,&nbsp;will&nbsp;return&nbsp;zeros.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;the&nbsp;total&nbsp;loss&nbsp;(mass&nbsp;conservation&nbsp;loss&nbsp;+&nbsp;data&nbsp;misfit&nbsp;loss)&nbsp;at&nbsp;each&nbsp;iteration.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;step_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;boolean&nbsp;array&nbsp;indicating&nbsp;whether&nbsp;the&nbsp;proposal&nbsp;was&nbsp;accepted&nbsp;at&nbsp;each&nbsp;iteration.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;resampled_times&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;counting&nbsp;how&nbsp;many&nbsp;times&nbsp;each&nbsp;grid&nbsp;cell&nbsp;was&nbsp;part&nbsp;of&nbsp;an&nbsp;accepted&nbsp;proposal.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;blocks_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;logging&nbsp;the&nbsp;location&nbsp;and&nbsp;size&nbsp;`[row,&nbsp;col,&nbsp;height,&nbsp;width]`&nbsp;of&nbsp;the&nbsp;proposed&nbsp;update&nbsp;block&nbsp;at&nbsp;each&nbsp;iteration.</span></dd></dl>
 
-<dl><dt><a name="chain_crf-set_crf_data_weight"><strong>set_crf_data_weight</strong></a>(self, RF)</dt><dd><span class="code">Calculate&nbsp;and&nbsp;store&nbsp;CRF&nbsp;weights&nbsp;from&nbsp;conditioning&nbsp;data&nbsp;using&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>.<br>
+<dl><dt><a name="chain_crf-set_crf_data_weight"><strong>set_crf_data_weight</strong></a>(self, RF)</dt><dd><span class="code">Calculate&nbsp;and&nbsp;store&nbsp;conditioning&nbsp;random&nbsp;field&nbsp;weights&nbsp;from&nbsp;conditioning&nbsp;data.<br>
+The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'crf_data_weight'<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;RF&nbsp;(<a href="#RandField">RandField</a>):&nbsp;A&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;configured&nbsp;for&nbsp;CRF&nbsp;weight&nbsp;generation.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;RF&nbsp;(<a href="#RandField">RandField</a>):&nbsp;A&nbsp;<a href="#RandField">RandField</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;with&nbsp;the&nbsp;logistic&nbsp;function&nbsp;parameters&nbsp;configured.</span></dd></dl>
 
 <dl><dt><a name="chain_crf-set_update_type"><strong>set_update_type</strong></a>(self, block_type)</dt><dd><span class="code">Set&nbsp;types&nbsp;of&nbsp;the&nbsp;perturbation&nbsp;blocks.&nbsp;<br>
-For&nbsp;now,&nbsp;can&nbsp;choose&nbsp;from&nbsp;unconditional&nbsp;random&nbsp;field&nbsp;('RF')&nbsp;or&nbsp;conditional&nbsp;random&nbsp;field&nbsp;created&nbsp;by&nbsp;logistic&nbsp;weighting&nbsp;(CRF_weight)<br>
+For&nbsp;the&nbsp;current&nbsp;version&nbsp;of&nbsp;the&nbsp;algorithm,&nbsp;can&nbsp;choose&nbsp;from&nbsp;unconditional&nbsp;random&nbsp;field&nbsp;('RF')&nbsp;or&nbsp;conditional&nbsp;random&nbsp;field&nbsp;('CRF')&nbsp;created&nbsp;by&nbsp;logistic&nbsp;weighting&nbsp;(CRF_weight)<br>
+The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'block_type'<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;block_type&nbsp;(str):&nbsp;'CRF_weight',&nbsp;'CRF_rbf'&nbsp;(not&nbsp;implemented),&nbsp;or&nbsp;'RF'.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;block_type&nbsp;(str):&nbsp;'CRF_weight'&nbsp;or&nbsp;'RF'.<br>
 &nbsp;<br>
 Raises:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;block_type&nbsp;is&nbsp;invalid.</span></dd></dl>
 
 <hr>
 Methods inherited from <a href="gstatsMCMC.MCMC.html#chain">chain</a>:<br>
-<dl><dt><a name="chain_crf-__init__"><strong>__init__</strong></a>(self, xx, yy, bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution)</dt><dd><span class="code">Initialize&nbsp;the&nbsp;Markov&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;for&nbsp;topography&nbsp;sampling.<br>
-The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns&nbsp;but&nbsp;the&nbsp;input&nbsp;argument&nbsp;are&nbsp;stored&nbsp;in&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a><br>
+<dl><dt><a name="chain_crf-__init__"><strong>__init__</strong></a>(self, xx, yy, initial_bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution)</dt><dd><span class="code">Initializes&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>&nbsp;with&nbsp;input&nbsp;data&nbsp;and&nbsp;model&nbsp;geometry.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;xx,&nbsp;yy&nbsp;(2D&nbsp;array):&nbsp;x&nbsp;and&nbsp;y&nbsp;coordinates&nbsp;of&nbsp;the&nbsp;map&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bed&nbsp;(2D&nbsp;array):&nbsp;Initial&nbsp;bed&nbsp;topography.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;surf&nbsp;(2D&nbsp;array):&nbsp;Ice&nbsp;surface&nbsp;elevation.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;velx,&nbsp;vely&nbsp;(2D&nbsp;array):&nbsp;Ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;x&nbsp;direction&nbsp;and&nbsp;in&nbsp;y&nbsp;direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dhdt&nbsp;(2D&nbsp;array):&nbsp;Surface&nbsp;height&nbsp;change&nbsp;rate&nbsp;(annual&nbsp;average).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;smb&nbsp;(2D&nbsp;array):&nbsp;Surface&nbsp;mass&nbsp;balance&nbsp;(annual&nbsp;average).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;cond_bed&nbsp;(2D&nbsp;array):&nbsp;Conditioning&nbsp;radar&nbsp;bed&nbsp;measurements&nbsp;in&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;2D&nbsp;domain.&nbsp;For&nbsp;locations&nbsp;without&nbsp;measurement,&nbsp;the&nbsp;value&nbsp;is&nbsp;nan<br>
-&nbsp;&nbsp;&nbsp;&nbsp;data_mask&nbsp;(2D&nbsp;array):&nbsp;Mask&nbsp;of&nbsp;where&nbsp;conditioning&nbsp;data&nbsp;exists&nbsp;(1&nbsp;=&nbsp;exist).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;grounded_ice_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;of&nbsp;grounded&nbsp;ice&nbsp;(1&nbsp;=&nbsp;grounded).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;Spatial&nbsp;resolution&nbsp;in&nbsp;meters.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;xx&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;grid&nbsp;x-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;yy&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;grid&nbsp;y-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;initial_bed&nbsp;(np.ndarray):&nbsp;The&nbsp;initial&nbsp;bed&nbsp;topography&nbsp;guess.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;surf&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;elevation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;velx&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;the&nbsp;x-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;vely&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;the&nbsp;y-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dhdt&nbsp;(np.ndarray):&nbsp;The&nbsp;rate&nbsp;of&nbsp;surface&nbsp;height&nbsp;change.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;smb&nbsp;(np.ndarray):&nbsp;The&nbsp;surface&nbsp;mass&nbsp;balance.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cond_bed&nbsp;(np.ndarray):&nbsp;Conditioning&nbsp;radar&nbsp;bed&nbsp;measurements.&nbsp;Grid&nbsp;cells&nbsp;without&nbsp;data&nbsp;should&nbsp;be&nbsp;marked&nbsp;with&nbsp;NaN.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;where&nbsp;1&nbsp;indicates&nbsp;the&nbsp;presence&nbsp;of&nbsp;conditioning&nbsp;data.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;grounded_ice_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;where&nbsp;1&nbsp;indicates&nbsp;grounded&nbsp;ice.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;The&nbsp;spatial&nbsp;resolution&nbsp;of&nbsp;the&nbsp;grid&nbsp;in&nbsp;meters.<br>
 &nbsp;<br>
 Raises:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;Exception:&nbsp;If&nbsp;input&nbsp;arrays&nbsp;do&nbsp;not&nbsp;have&nbsp;matching&nbsp;shapes.</span></dd></dl>
 
-<dl><dt><a name="chain_crf-loss"><strong>loss</strong></a>(self, massConvResidual, dataDiff)</dt><dd><span class="code">Compute&nbsp;total&nbsp;loss&nbsp;from&nbsp;mass&nbsp;conservation&nbsp;residuals&nbsp;and&nbsp;data&nbsp;misfit&nbsp;by&nbsp;applying&nbsp;function&nbsp;defined&nbsp;in&nbsp;set_loss_type<br>
+<dl><dt><a name="chain_crf-loss"><strong>loss</strong></a>(self, massConvResidual, dataDiff)</dt><dd><span class="code">Computes&nbsp;the&nbsp;value&nbsp;of&nbsp;the&nbsp;loss&nbsp;function&nbsp;for&nbsp;a&nbsp;candidate&nbsp;topography.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;massConvResidual&nbsp;(2D&nbsp;array):&nbsp;Mass&nbsp;conservation&nbsp;residual&nbsp;field.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dataDiff&nbsp;(2D&nbsp;array):&nbsp;Difference&nbsp;between&nbsp;candidate&nbsp;and&nbsp;observed&nbsp;bed&nbsp;elevation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;massConvResidual&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;field.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dataDiff&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;difference&nbsp;between&nbsp;the&nbsp;candidate&nbsp;topography&nbsp;and&nbsp;observed&nbsp;bed&nbsp;elevation.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;total_loss&nbsp;(float):&nbsp;Combined&nbsp;loss&nbsp;value.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_mc&nbsp;(float):&nbsp;Loss&nbsp;due&nbsp;to&nbsp;mass&nbsp;conservation&nbsp;residual.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_data&nbsp;(float):&nbsp;Loss&nbsp;due&nbsp;to&nbsp;data&nbsp;misfit.</span></dd></dl>
-
-<dl><dt><a name="chain_crf-set_high_vel_region"><strong>set_high_vel_region</strong></a>(self, update_in_region, region_mask=[])</dt><dd><span class="code">Define&nbsp;spatial&nbsp;region&nbsp;where&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;is&nbsp;high&nbsp;to&nbsp;constrain&nbsp;the&nbsp;location&nbsp;of&nbsp;updates.<br>
-&nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;update_in_region&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;constrain&nbsp;updates&nbsp;to&nbsp;region_mask.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;region_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;specifying&nbsp;region&nbsp;of&nbsp;interest.<br>
-&nbsp;<br>
-Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;region_mask&nbsp;has&nbsp;incorrect&nbsp;shape.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;total_loss&nbsp;(float):&nbsp;The&nbsp;combined,&nbsp;weighted&nbsp;loss&nbsp;value.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_mc&nbsp;(float):&nbsp;The&nbsp;loss&nbsp;component&nbsp;from&nbsp;mass&nbsp;conservation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_data&nbsp;(float):&nbsp;The&nbsp;loss&nbsp;component&nbsp;from&nbsp;data&nbsp;misfit.</span></dd></dl>
 
 <dl><dt><a name="chain_crf-set_loss_type"><strong>set_loss_type</strong></a>(self, map_func=None, diff_func=None, sigma_mc=-1, sigma_data=-1, massConvInRegion=True, dataDiffInRegion=False)</dt><dd><span class="code">Configure&nbsp;loss&nbsp;function&nbsp;used&nbsp;in&nbsp;MCMC&nbsp;<a href="#chain">chain</a><br>
-Currently&nbsp;enable&nbsp;two&nbsp;losses&nbsp;to&nbsp;be&nbsp;used:&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;and&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements.<br>
+Currently&nbsp;enable&nbsp;either&nbsp;of&nbsp;losses&nbsp;(or&nbsp;both)&nbsp;to&nbsp;be&nbsp;used:&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;and&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements.<br>
 The&nbsp;function&nbsp;has&nbsp;no&nbsp;return.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;'loss_function_list'&nbsp;attribute<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;map_func&nbsp;(str):&nbsp;Function&nbsp;to&nbsp;use&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare',&nbsp;None).&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Default&nbsp;is&nbsp;None.&nbsp;If&nbsp;set&nbsp;to&nbsp;None,&nbsp;then&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;is&nbsp;not&nbsp;used&nbsp;for&nbsp;calculating&nbsp;the&nbsp;loss.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;'sumsquare'&nbsp;correspond&nbsp;to&nbsp;treat&nbsp;the&nbsp;residual&nbsp;as&nbsp;Gaussian&nbsp;distribution<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;diff_func&nbsp;(str):&nbsp;Function&nbsp;to&nbsp;use&nbsp;for&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare',&nbsp;None).&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Default&nbsp;is&nbsp;None.&nbsp;If&nbsp;set&nbsp;to&nbsp;None,&nbsp;then&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;is&nbsp;not&nbsp;used&nbsp;for&nbsp;calculating&nbsp;the&nbsp;loss.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;'sumsquare'&nbsp;correspond&nbsp;to&nbsp;treat&nbsp;the&nbsp;misfit&nbsp;as&nbsp;Gaussian&nbsp;distribution<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;Standard&nbsp;deviation&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;residual.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sigma_data&nbsp;(float):&nbsp;Standard&nbsp;deviation&nbsp;for&nbsp;data&nbsp;misfit.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;massConvInRegion&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;calculate&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;only&nbsp;in&nbsp;region_mask.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dataDiffInRegion&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;calculate&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;only&nbsp;in&nbsp;region_mask.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;map_func&nbsp;(str,&nbsp;optional):&nbsp;The&nbsp;aggregation&nbsp;function&nbsp;for&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare').&nbsp;'sumsquare'&nbsp;corresponds&nbsp;to&nbsp;a&nbsp;Gaussian&nbsp;likelihood.&nbsp;If&nbsp;None,&nbsp;this&nbsp;loss&nbsp;component&nbsp;is&nbsp;ignored.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;diff_func&nbsp;(str,&nbsp;optional):&nbsp;The&nbsp;aggregation&nbsp;function&nbsp;for&nbsp;the&nbsp;radar&nbsp;data&nbsp;misfit&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare').&nbsp;'sumsquare'&nbsp;corresponds&nbsp;to&nbsp;a&nbsp;Gaussian&nbsp;likelihood.&nbsp;If&nbsp;None,&nbsp;this&nbsp;loss&nbsp;component&nbsp;is&nbsp;ignored.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;The&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;likelihood.&nbsp;This&nbsp;is&nbsp;required&nbsp;if&nbsp;`map_func`&nbsp;is&nbsp;not&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_data&nbsp;(float):&nbsp;The&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;data&nbsp;misfit&nbsp;likelihood.&nbsp;This&nbsp;is&nbsp;required&nbsp;if&nbsp;`diff_func`&nbsp;is&nbsp;not&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;massConvInRegion&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;calculates&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;only&nbsp;within&nbsp;the&nbsp;specified&nbsp;`region_mask`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dataDiffInRegion&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;calculates&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;only&nbsp;within&nbsp;the&nbsp;specified&nbsp;`region_mask`.<br>
 &nbsp;<br>
 Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;function&nbsp;names&nbsp;are&nbsp;invalid&nbsp;or&nbsp;sigmas&nbsp;are&nbsp;missing.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;function&nbsp;names&nbsp;are&nbsp;invalid&nbsp;or&nbsp;required&nbsp;`sigma`&nbsp;values&nbsp;are&nbsp;not&nbsp;provided.</span></dd></dl>
+
+<dl><dt><a name="chain_crf-set_update_region"><strong>set_update_region</strong></a>(self, update_in_region, region_mask=[])</dt><dd><span class="code">Defines&nbsp;a&nbsp;spatial&nbsp;mask&nbsp;to&nbsp;constrain&nbsp;where&nbsp;topography&nbsp;updates&nbsp;can&nbsp;occur.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;update_in_region&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;updates&nbsp;are&nbsp;restricted&nbsp;to&nbsp;the&nbsp;area&nbsp;defined&nbsp;by&nbsp;`region_mask`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;region_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;specifying&nbsp;the&nbsp;update&nbsp;region.<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;`region_mask`&nbsp;does&nbsp;not&nbsp;match&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;grid&nbsp;in&nbsp;the&nbsp;initialization.</span></dd></dl>
 
 <hr>
 Data descriptors inherited from <a href="gstatsMCMC.MCMC.html#chain">chain</a>:<br>
@@ -364,9 +419,18 @@ Data descriptors inherited from <a href="gstatsMCMC.MCMC.html#chain">chain</a>:<
 <td class="section-title" colspan=3>&nbsp;<br><a name="chain_sgs">class <strong>chain_sgs</strong></a>(<a href="gstatsMCMC.MCMC.html#chain">chain</a>)</td></tr>
     
 <tr><td class="decor title-decor" rowspan=2><span class="code">&nbsp;&nbsp;&nbsp;</span></td>
-<td class="decor title-decor" colspan=2><span class="code"><a href="#chain_sgs">chain_sgs</a>(xx,&nbsp;yy,&nbsp;bed,&nbsp;surf,&nbsp;velx,&nbsp;vely,&nbsp;dhdt,&nbsp;smb,&nbsp;cond_bed,&nbsp;data_mask,&nbsp;grounded_ice_mask,&nbsp;resolution)<br>
+<td class="decor title-decor" colspan=2><span class="code"><a href="#chain_sgs">chain_sgs</a>(xx,&nbsp;yy,&nbsp;initial_bed,&nbsp;surf,&nbsp;velx,&nbsp;vely,&nbsp;dhdt,&nbsp;smb,&nbsp;cond_bed,&nbsp;data_mask,&nbsp;grounded_ice_mask,&nbsp;resolution)<br>
 &nbsp;<br>
-Inherit&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;class.&nbsp;Used&nbsp;for&nbsp;creating&nbsp;sequential&nbsp;gaussian&nbsp;simulation&nbsp;blocks-based&nbsp;MCMC&nbsp;chains.<br>&nbsp;</span></td></tr>
+Inherit&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;class.&nbsp;Used&nbsp;for&nbsp;creating&nbsp;sequential&nbsp;gaussian&nbsp;simulation&nbsp;blocks-based&nbsp;MCMC&nbsp;chains.<br>
+&nbsp;<br>
+Parameters&nbsp;in&nbsp;addition&nbsp;to&nbsp;<a href="#chain">chain</a>'s&nbsp;parameters:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;nst_trans&nbsp;(scikit-learn.preprocessing.QuantileTransformer):&nbsp;The&nbsp;normal&nbsp;score&nbsp;transformation&nbsp;for&nbsp;the&nbsp;(detrended/not&nbsp;detrended)&nbsp;subglacial&nbsp;topography.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;trend:&nbsp;(numpy.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;representing&nbsp;the&nbsp;trend&nbsp;of&nbsp;the&nbsp;subglacial&nbsp;topography<br>
+&nbsp;&nbsp;&nbsp;&nbsp;detrend_map&nbsp;(bool):&nbsp;If&nbsp;'True',&nbsp;the&nbsp;subglacial&nbsp;topography&nbsp;will&nbsp;be&nbsp;de-trended&nbsp;using&nbsp;parameter&nbsp;'trend'.&nbsp;If&nbsp;'False',&nbsp;the&nbsp;topography&nbsp;will&nbsp;not&nbsp;be&nbsp;de-trended.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;vario_type&nbsp;(string):&nbsp;The&nbsp;type&nbsp;of&nbsp;variogram&nbsp;model&nbsp;used&nbsp;for&nbsp;SGS&nbsp;('Gaussian',&nbsp;'Exponential',&nbsp;'Spherical',&nbsp;or&nbsp;'Matern').<br>
+&nbsp;&nbsp;&nbsp;&nbsp;vario_param&nbsp;(list):&nbsp;A&nbsp;list&nbsp;of&nbsp;parameters&nbsp;defining&nbsp;the&nbsp;variogram&nbsp;model,&nbsp;set&nbsp;by&nbsp;the&nbsp;`set_variogram`&nbsp;method.&nbsp;[azimuth,&nbsp;nugget,&nbsp;major&nbsp;range,&nbsp;minor&nbsp;range,&nbsp;sill,&nbsp;variogram&nbsp;type,&nbsp;smoothness].<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sgs_param&nbsp;(list):&nbsp;A&nbsp;list&nbsp;of&nbsp;parameters&nbsp;controlling&nbsp;the&nbsp;SGS&nbsp;behavior,&nbsp;set&nbsp;by&nbsp;the&nbsp;`set_sgs_param`&nbsp;method.&nbsp;[number&nbsp;of&nbsp;nearest&nbsp;neighbors,&nbsp;searching&nbsp;radius,&nbsp;randomly&nbsp;drop&nbsp;out&nbsp;conditioning&nbsp;data&nbsp;(True&nbsp;or&nbsp;False),&nbsp;dropout&nbsp;rate]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;block_min_x,&nbsp;block_max_x,&nbsp;block_min_y,&nbsp;block_max_y&nbsp;(int):&nbsp;the&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;width&nbsp;and&nbsp;height&nbsp;of&nbsp;the&nbsp;update&nbsp;block<br>&nbsp;</span></td></tr>
 <tr><td>&nbsp;</td>
 <td class="singlecolumn"><dl><dt>Method resolution order:</dt>
 <dd><a href="gstatsMCMC.MCMC.html#chain_sgs">chain_sgs</a></dd>
@@ -375,40 +439,47 @@ Inherit&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;class.&nbsp;Used&nbsp;for&
 </dl>
 <hr>
 Methods defined here:<br>
-<dl><dt><a name="chain_sgs-__init_func__"><strong>__init_func__</strong></a>(self)</dt></dl>
+<dl><dt><a name="chain_sgs-__init_func__"><strong>__init_func__</strong></a>(self)</dt><dd><span class="code">A&nbsp;placeholder&nbsp;function&nbsp;for&nbsp;printing&nbsp;out&nbsp;notes&nbsp;and&nbsp;instruction&nbsp;on&nbsp;setting-up&nbsp;the&nbsp;<a href="#chain">chain</a><br>
+&nbsp;<br>
+No&nbsp;returns.</span></dd></dl>
 
-<dl><dt><a name="chain_sgs-run"><strong>run</strong></a>(self, n_iter, rng='default')</dt><dd><span class="code">Run&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>&nbsp;using&nbsp;block-based&nbsp;SGS&nbsp;updates<br>
+<dl><dt><a name="chain_sgs-run"><strong>run</strong></a>(self, n_iter, rng_seed=None, only_save_last_bed=False, info_per_iter=1000)</dt><dd><span class="code">Run&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>&nbsp;using&nbsp;block-based&nbsp;SGS&nbsp;updates<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;n_iter&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;iterations&nbsp;in&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;rng&nbsp;(str&nbsp;or&nbsp;np.random.Generator):&nbsp;Random&nbsp;number&nbsp;generator.&nbsp;Default&nbsp;is&nbsp;'default',&nbsp;which&nbsp;makes&nbsp;a&nbsp;random&nbsp;generator&nbsp;with&nbsp;random&nbsp;seeds<br>
+&nbsp;&nbsp;&nbsp;&nbsp;rng_seed&nbsp;(None&nbsp;or&nbsp;string):&nbsp;The&nbsp;seed&nbsp;for&nbsp;the&nbsp;NumPy&nbsp;random&nbsp;number&nbsp;generator.&nbsp;If&nbsp;None,&nbsp;a&nbsp;random&nbsp;seed&nbsp;is&nbsp;used.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;only_save_last_bed:&nbsp;If&nbsp;true,&nbsp;the&nbsp;function&nbsp;will&nbsp;only&nbsp;return&nbsp;one&nbsp;subglacial&nbsp;topography&nbsp;at&nbsp;the&nbsp;end&nbsp;of&nbsp;iterations.&nbsp;If&nbsp;false,&nbsp;the&nbsp;function&nbsp;will&nbsp;return&nbsp;all&nbsp;subglacial&nbsp;topography&nbsp;in&nbsp;every&nbsp;iteration.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;info_per_iter&nbsp;(int):&nbsp;for&nbsp;every&nbsp;this&nbsp;number&nbsp;of&nbsp;iterations,&nbsp;the&nbsp;information&nbsp;regarding&nbsp;current&nbsp;loss&nbsp;values&nbsp;and&nbsp;acceptance&nbsp;rate&nbsp;will&nbsp;be&nbsp;printed&nbsp;out.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bed_cache&nbsp;(4D&nbsp;array):&nbsp;Topography&nbsp;at&nbsp;each&nbsp;iteration.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_mc_cache&nbsp;(1D&nbsp;array):&nbsp;Mass&nbsp;conservation&nbsp;residual&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;is&nbsp;not&nbsp;used,&nbsp;return&nbsp;array&nbsp;of&nbsp;0<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_data_cache&nbsp;(1D&nbsp;array):&nbsp;Data&nbsp;misfit&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;is&nbsp;not&nbsp;used,&nbsp;return&nbsp;array&nbsp;of&nbsp;0<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_cache&nbsp;(1D&nbsp;array):&nbsp;Total&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;step_cache&nbsp;(1D&nbsp;array):&nbsp;Boolean&nbsp;indicating&nbsp;if&nbsp;the&nbsp;step&nbsp;was&nbsp;accepted.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resampled_times&nbsp;(2D&nbsp;array):&nbsp;Number&nbsp;of&nbsp;times&nbsp;each&nbsp;pixel&nbsp;was&nbsp;updated.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;blocks_cache&nbsp;(2D&nbsp;array):&nbsp;Info&nbsp;on&nbsp;block&nbsp;proposals&nbsp;at&nbsp;each&nbsp;iteration.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;bed_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;3D&nbsp;array&nbsp;showing&nbsp;subglacial&nbsp;topography&nbsp;at&nbsp;each&nbsp;iteration,&nbsp;or&nbsp;only&nbsp;the&nbsp;last&nbsp;topography.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_mc_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;is&nbsp;not&nbsp;used,&nbsp;return&nbsp;array&nbsp;of&nbsp;0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_data_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.&nbsp;If&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;is&nbsp;not&nbsp;used,&nbsp;return&nbsp;array&nbsp;of&nbsp;0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;total&nbsp;loss&nbsp;at&nbsp;each&nbsp;iteration.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;step_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;boolean&nbsp;indicating&nbsp;if&nbsp;the&nbsp;step&nbsp;was&nbsp;accepted.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;resampled_times&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;number&nbsp;of&nbsp;times&nbsp;each&nbsp;pixel&nbsp;was&nbsp;updated.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;blocks_cache&nbsp;(np.ndarray):&nbsp;A&nbsp;1D&nbsp;array&nbsp;of&nbsp;info&nbsp;on&nbsp;block&nbsp;proposals&nbsp;at&nbsp;each&nbsp;iteration,&nbsp;(x&nbsp;coordinate&nbsp;for&nbsp;the&nbsp;center&nbsp;of&nbsp;the&nbsp;block,&nbsp;y&nbsp;coordinate&nbsp;for&nbsp;the&nbsp;center&nbsp;of&nbsp;the&nbsp;block,&nbsp;block&nbsp;size&nbsp;in&nbsp;x-direction,&nbsp;block&nbsp;size&nbsp;in&nbsp;y-direction).</span></dd></dl>
 
-<dl><dt><a name="chain_sgs-set_block_sizes"><strong>set_block_sizes</strong></a>(self, block_min_x, block_min_y, block_max_x, block_max_y)</dt><dd><span class="code">Set&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;block&nbsp;sizes&nbsp;(in&nbsp;grid&nbsp;cells)&nbsp;for&nbsp;SGS&nbsp;updates.<br>
+<dl><dt><a name="chain_sgs-set_block_sizes"><strong>set_block_sizes</strong></a>(self, block_min_x, block_max_x, block_min_y, block_max_y)</dt><dd><span class="code">Set&nbsp;minimum&nbsp;and&nbsp;maximum&nbsp;block&nbsp;sizes&nbsp;(in&nbsp;grid&nbsp;cells)&nbsp;for&nbsp;SGS&nbsp;updates.<br>
+The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'block_min_x',&nbsp;'block_max_x',&nbsp;'block_min_y',&nbsp;'block_max_y'<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;block_min_x&nbsp;(int):&nbsp;Minimum&nbsp;width&nbsp;of&nbsp;block&nbsp;in&nbsp;x-direction.&nbsp;Unit&nbsp;in&nbsp;grid&nbsp;cells<br>
-&nbsp;&nbsp;&nbsp;&nbsp;block_min_y&nbsp;(int):&nbsp;Minimum&nbsp;height&nbsp;of&nbsp;block&nbsp;in&nbsp;y-direction.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;block_max_x&nbsp;(int):&nbsp;Maximum&nbsp;width&nbsp;of&nbsp;block&nbsp;in&nbsp;x-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;block_min_y&nbsp;(int):&nbsp;Minimum&nbsp;height&nbsp;of&nbsp;block&nbsp;in&nbsp;y-direction.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;block_max_y&nbsp;(int):&nbsp;Maximum&nbsp;height&nbsp;of&nbsp;block&nbsp;in&nbsp;y-direction.</span></dd></dl>
 
 <dl><dt><a name="chain_sgs-set_normal_transformation"><strong>set_normal_transformation</strong></a>(self, nst_trans)</dt><dd><span class="code">Set&nbsp;the&nbsp;normal&nbsp;score&nbsp;transformation&nbsp;<a href="builtins.html#object">object</a>&nbsp;(from&nbsp;scikit-learn&nbsp;package)&nbsp;used&nbsp;to&nbsp;normalize&nbsp;the&nbsp;bed&nbsp;elevation.<br>
+The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'nst_trans'<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;nst_trans&nbsp;(QuantileTransformer):&nbsp;A&nbsp;fitted&nbsp;scikit-learn&nbsp;transformer&nbsp;used&nbsp;to&nbsp;normalize&nbsp;input&nbsp;data.<br>
 &nbsp;<br>
 Note:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;This&nbsp;transformation&nbsp;must&nbsp;be&nbsp;fit&nbsp;beforehand&nbsp;(e.g.,&nbsp;via&nbsp;`MCMC.fit_variogram`)&nbsp;and&nbsp;should&nbsp;match&nbsp;the&nbsp;scale&nbsp;of&nbsp;bed&nbsp;values.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;This&nbsp;transformation&nbsp;must&nbsp;be&nbsp;fit&nbsp;beforehand&nbsp;(e.g.,&nbsp;via&nbsp;`MCMC.fit_variogram`).</span></dd></dl>
 
-<dl><dt><a name="chain_sgs-set_sgs_param"><strong>set_sgs_param</strong></a>(self, sgs_num_nearest_neighbors, sgs_searching_radius, sgs_rand_dropout_on=False, dropout_rate=0)</dt><dd><span class="code">Set&nbsp;parameters&nbsp;for&nbsp;Sequential&nbsp;Gaussian&nbsp;Simulation&nbsp;(SGS).<br>
+<dl><dt><a name="chain_sgs-set_sgs_param"><strong>set_sgs_param</strong></a>(self, sgs_num_nearest_neighbors, sgs_searching_radius, sgs_rand_dropout_on=False, dropout_rate=0)</dt><dd><span class="code">Set&nbsp;parameters&nbsp;for&nbsp;Sequential&nbsp;Gaussian&nbsp;Simulation&nbsp;(SGS).&nbsp;Details&nbsp;please&nbsp;see&nbsp;implementation&nbsp;of&nbsp;SGS&nbsp;in&nbsp;GStatSim<br>
+The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'sgs_param<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;sgs_num_nearest_neighbors&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;nearest&nbsp;neighbors&nbsp;used&nbsp;in&nbsp;simulation.<br>
@@ -418,15 +489,17 @@ Args:<br>
 
 <dl><dt><a name="chain_sgs-set_trend"><strong>set_trend</strong></a>(self, trend=None, detrend_map=True)</dt><dd><span class="code">Set&nbsp;the&nbsp;long-wavelength&nbsp;trend&nbsp;component&nbsp;of&nbsp;the&nbsp;bed&nbsp;topography.<br>
 Notice&nbsp;that&nbsp;detrend&nbsp;topography&nbsp;means&nbsp;that&nbsp;the&nbsp;SGS&nbsp;simulation&nbsp;will&nbsp;only&nbsp;simulate&nbsp;the&nbsp;short-wavelength&nbsp;topography&nbsp;residuals&nbsp;that&nbsp;is&nbsp;not&nbsp;a&nbsp;part&nbsp;of&nbsp;the&nbsp;trend<br>
+The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'trend'&nbsp;and&nbsp;'detrend_map'<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;trend&nbsp;(2D&nbsp;array):&nbsp;The&nbsp;trend&nbsp;surface&nbsp;to&nbsp;add&nbsp;back&nbsp;after&nbsp;SGS&nbsp;sampling.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;trend&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array,&nbsp;representing&nbsp;the&nbsp;topographic&nbsp;trend.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;detrend_map&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;remove&nbsp;trend&nbsp;before&nbsp;transforming&nbsp;the&nbsp;bed&nbsp;elevation&nbsp;and&nbsp;add&nbsp;it&nbsp;back&nbsp;after&nbsp;inverse&nbsp;transform.<br>
 &nbsp;<br>
 Raises:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;detrend_map&nbsp;is&nbsp;True&nbsp;but&nbsp;trend&nbsp;has&nbsp;invalid&nbsp;shape.</span></dd></dl>
 
 <dl><dt><a name="chain_sgs-set_variogram"><strong>set_variogram</strong></a>(self, vario_type, vario_range, vario_sill, vario_nugget, isotropic=True, vario_smoothness=None, vario_azimuth=None)</dt><dd><span class="code">Specify&nbsp;variogram&nbsp;model&nbsp;and&nbsp;its&nbsp;parameters&nbsp;for&nbsp;SGS&nbsp;interpolation.<br>
+The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'vario_type'&nbsp;and&nbsp;'vario_param'<br>
 &nbsp;<br>
 Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;vario_type&nbsp;(str):&nbsp;Variogram&nbsp;model&nbsp;type.&nbsp;One&nbsp;of&nbsp;'Gaussian',&nbsp;'Exponential',&nbsp;'Spherical',&nbsp;'Matern'.<br>
@@ -442,64 +515,59 @@ Raises:<br>
 
 <hr>
 Methods inherited from <a href="gstatsMCMC.MCMC.html#chain">chain</a>:<br>
-<dl><dt><a name="chain_sgs-__init__"><strong>__init__</strong></a>(self, xx, yy, bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution)</dt><dd><span class="code">Initialize&nbsp;the&nbsp;Markov&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;for&nbsp;topography&nbsp;sampling.<br>
-The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns&nbsp;but&nbsp;the&nbsp;input&nbsp;argument&nbsp;are&nbsp;stored&nbsp;in&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a><br>
+<dl><dt><a name="chain_sgs-__init__"><strong>__init__</strong></a>(self, xx, yy, initial_bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution)</dt><dd><span class="code">Initializes&nbsp;the&nbsp;MCMC&nbsp;<a href="#chain">chain</a>&nbsp;with&nbsp;input&nbsp;data&nbsp;and&nbsp;model&nbsp;geometry.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;xx,&nbsp;yy&nbsp;(2D&nbsp;array):&nbsp;x&nbsp;and&nbsp;y&nbsp;coordinates&nbsp;of&nbsp;the&nbsp;map&nbsp;grid.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;bed&nbsp;(2D&nbsp;array):&nbsp;Initial&nbsp;bed&nbsp;topography.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;surf&nbsp;(2D&nbsp;array):&nbsp;Ice&nbsp;surface&nbsp;elevation.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;velx,&nbsp;vely&nbsp;(2D&nbsp;array):&nbsp;Ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;x&nbsp;direction&nbsp;and&nbsp;in&nbsp;y&nbsp;direction.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dhdt&nbsp;(2D&nbsp;array):&nbsp;Surface&nbsp;height&nbsp;change&nbsp;rate&nbsp;(annual&nbsp;average).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;smb&nbsp;(2D&nbsp;array):&nbsp;Surface&nbsp;mass&nbsp;balance&nbsp;(annual&nbsp;average).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;cond_bed&nbsp;(2D&nbsp;array):&nbsp;Conditioning&nbsp;radar&nbsp;bed&nbsp;measurements&nbsp;in&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;2D&nbsp;domain.&nbsp;For&nbsp;locations&nbsp;without&nbsp;measurement,&nbsp;the&nbsp;value&nbsp;is&nbsp;nan<br>
-&nbsp;&nbsp;&nbsp;&nbsp;data_mask&nbsp;(2D&nbsp;array):&nbsp;Mask&nbsp;of&nbsp;where&nbsp;conditioning&nbsp;data&nbsp;exists&nbsp;(1&nbsp;=&nbsp;exist).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;grounded_ice_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;of&nbsp;grounded&nbsp;ice&nbsp;(1&nbsp;=&nbsp;grounded).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;Spatial&nbsp;resolution&nbsp;in&nbsp;meters.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;xx&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;grid&nbsp;x-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;yy&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;grid&nbsp;y-coordinates.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;initial_bed&nbsp;(np.ndarray):&nbsp;The&nbsp;initial&nbsp;bed&nbsp;topography&nbsp;guess.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;surf&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;elevation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;velx&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;the&nbsp;x-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;vely&nbsp;(np.ndarray):&nbsp;The&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;in&nbsp;the&nbsp;y-direction.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dhdt&nbsp;(np.ndarray):&nbsp;The&nbsp;rate&nbsp;of&nbsp;surface&nbsp;height&nbsp;change.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;smb&nbsp;(np.ndarray):&nbsp;The&nbsp;surface&nbsp;mass&nbsp;balance.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cond_bed&nbsp;(np.ndarray):&nbsp;Conditioning&nbsp;radar&nbsp;bed&nbsp;measurements.&nbsp;Grid&nbsp;cells&nbsp;without&nbsp;data&nbsp;should&nbsp;be&nbsp;marked&nbsp;with&nbsp;NaN.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;where&nbsp;1&nbsp;indicates&nbsp;the&nbsp;presence&nbsp;of&nbsp;conditioning&nbsp;data.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;grounded_ice_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;where&nbsp;1&nbsp;indicates&nbsp;grounded&nbsp;ice.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;resolution&nbsp;(float):&nbsp;The&nbsp;spatial&nbsp;resolution&nbsp;of&nbsp;the&nbsp;grid&nbsp;in&nbsp;meters.<br>
 &nbsp;<br>
 Raises:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;Exception:&nbsp;If&nbsp;input&nbsp;arrays&nbsp;do&nbsp;not&nbsp;have&nbsp;matching&nbsp;shapes.</span></dd></dl>
 
-<dl><dt><a name="chain_sgs-loss"><strong>loss</strong></a>(self, massConvResidual, dataDiff)</dt><dd><span class="code">Compute&nbsp;total&nbsp;loss&nbsp;from&nbsp;mass&nbsp;conservation&nbsp;residuals&nbsp;and&nbsp;data&nbsp;misfit&nbsp;by&nbsp;applying&nbsp;function&nbsp;defined&nbsp;in&nbsp;set_loss_type<br>
+<dl><dt><a name="chain_sgs-loss"><strong>loss</strong></a>(self, massConvResidual, dataDiff)</dt><dd><span class="code">Computes&nbsp;the&nbsp;value&nbsp;of&nbsp;the&nbsp;loss&nbsp;function&nbsp;for&nbsp;a&nbsp;candidate&nbsp;topography.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;massConvResidual&nbsp;(2D&nbsp;array):&nbsp;Mass&nbsp;conservation&nbsp;residual&nbsp;field.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dataDiff&nbsp;(2D&nbsp;array):&nbsp;Difference&nbsp;between&nbsp;candidate&nbsp;and&nbsp;observed&nbsp;bed&nbsp;elevation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;massConvResidual&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;field.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dataDiff&nbsp;(np.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;of&nbsp;the&nbsp;difference&nbsp;between&nbsp;the&nbsp;candidate&nbsp;topography&nbsp;and&nbsp;observed&nbsp;bed&nbsp;elevation.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;total_loss&nbsp;(float):&nbsp;Combined&nbsp;loss&nbsp;value.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_mc&nbsp;(float):&nbsp;Loss&nbsp;due&nbsp;to&nbsp;mass&nbsp;conservation&nbsp;residual.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss_data&nbsp;(float):&nbsp;Loss&nbsp;due&nbsp;to&nbsp;data&nbsp;misfit.</span></dd></dl>
-
-<dl><dt><a name="chain_sgs-set_high_vel_region"><strong>set_high_vel_region</strong></a>(self, update_in_region, region_mask=[])</dt><dd><span class="code">Define&nbsp;spatial&nbsp;region&nbsp;where&nbsp;ice&nbsp;surface&nbsp;velocity&nbsp;is&nbsp;high&nbsp;to&nbsp;constrain&nbsp;the&nbsp;location&nbsp;of&nbsp;updates.<br>
-&nbsp;<br>
-Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;update_in_region&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;constrain&nbsp;updates&nbsp;to&nbsp;region_mask.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;region_mask&nbsp;(2D&nbsp;array):&nbsp;Binary&nbsp;mask&nbsp;specifying&nbsp;region&nbsp;of&nbsp;interest.<br>
-&nbsp;<br>
-Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;region_mask&nbsp;has&nbsp;incorrect&nbsp;shape.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;total_loss&nbsp;(float):&nbsp;The&nbsp;combined,&nbsp;weighted&nbsp;loss&nbsp;value.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_mc&nbsp;(float):&nbsp;The&nbsp;loss&nbsp;component&nbsp;from&nbsp;mass&nbsp;conservation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss_data&nbsp;(float):&nbsp;The&nbsp;loss&nbsp;component&nbsp;from&nbsp;data&nbsp;misfit.</span></dd></dl>
 
 <dl><dt><a name="chain_sgs-set_loss_type"><strong>set_loss_type</strong></a>(self, map_func=None, diff_func=None, sigma_mc=-1, sigma_data=-1, massConvInRegion=True, dataDiffInRegion=False)</dt><dd><span class="code">Configure&nbsp;loss&nbsp;function&nbsp;used&nbsp;in&nbsp;MCMC&nbsp;<a href="#chain">chain</a><br>
-Currently&nbsp;enable&nbsp;two&nbsp;losses&nbsp;to&nbsp;be&nbsp;used:&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;and&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements.<br>
+Currently&nbsp;enable&nbsp;either&nbsp;of&nbsp;losses&nbsp;(or&nbsp;both)&nbsp;to&nbsp;be&nbsp;used:&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;and&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements.<br>
 The&nbsp;function&nbsp;has&nbsp;no&nbsp;return.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;<a href="#chain">chain</a>&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;'loss_function_list'&nbsp;attribute<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;map_func&nbsp;(str):&nbsp;Function&nbsp;to&nbsp;use&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare',&nbsp;None).&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Default&nbsp;is&nbsp;None.&nbsp;If&nbsp;set&nbsp;to&nbsp;None,&nbsp;then&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;is&nbsp;not&nbsp;used&nbsp;for&nbsp;calculating&nbsp;the&nbsp;loss.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;'sumsquare'&nbsp;correspond&nbsp;to&nbsp;treat&nbsp;the&nbsp;residual&nbsp;as&nbsp;Gaussian&nbsp;distribution<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;diff_func&nbsp;(str):&nbsp;Function&nbsp;to&nbsp;use&nbsp;for&nbsp;misfit&nbsp;to&nbsp;radar&nbsp;measurements&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare',&nbsp;None).&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;Default&nbsp;is&nbsp;None.&nbsp;If&nbsp;set&nbsp;to&nbsp;None,&nbsp;then&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;is&nbsp;not&nbsp;used&nbsp;for&nbsp;calculating&nbsp;the&nbsp;loss.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;'sumsquare'&nbsp;correspond&nbsp;to&nbsp;treat&nbsp;the&nbsp;misfit&nbsp;as&nbsp;Gaussian&nbsp;distribution<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;Standard&nbsp;deviation&nbsp;for&nbsp;mass&nbsp;conservation&nbsp;residual.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;sigma_data&nbsp;(float):&nbsp;Standard&nbsp;deviation&nbsp;for&nbsp;data&nbsp;misfit.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;massConvInRegion&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;calculate&nbsp;mass&nbsp;conservation&nbsp;residual&nbsp;only&nbsp;in&nbsp;region_mask.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;dataDiffInRegion&nbsp;(bool):&nbsp;Whether&nbsp;to&nbsp;calculate&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;only&nbsp;in&nbsp;region_mask.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;map_func&nbsp;(str,&nbsp;optional):&nbsp;The&nbsp;aggregation&nbsp;function&nbsp;for&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare').&nbsp;'sumsquare'&nbsp;corresponds&nbsp;to&nbsp;a&nbsp;Gaussian&nbsp;likelihood.&nbsp;If&nbsp;None,&nbsp;this&nbsp;loss&nbsp;component&nbsp;is&nbsp;ignored.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;diff_func&nbsp;(str,&nbsp;optional):&nbsp;The&nbsp;aggregation&nbsp;function&nbsp;for&nbsp;the&nbsp;radar&nbsp;data&nbsp;misfit&nbsp;('meanabs',&nbsp;'meansquare',&nbsp;'sumabs',&nbsp;'sumsquare').&nbsp;'sumsquare'&nbsp;corresponds&nbsp;to&nbsp;a&nbsp;Gaussian&nbsp;likelihood.&nbsp;If&nbsp;None,&nbsp;this&nbsp;loss&nbsp;component&nbsp;is&nbsp;ignored.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_mc&nbsp;(float):&nbsp;The&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;mass&nbsp;flux&nbsp;residuals&nbsp;likelihood.&nbsp;This&nbsp;is&nbsp;required&nbsp;if&nbsp;`map_func`&nbsp;is&nbsp;not&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sigma_data&nbsp;(float):&nbsp;The&nbsp;standard&nbsp;deviation&nbsp;for&nbsp;the&nbsp;data&nbsp;misfit&nbsp;likelihood.&nbsp;This&nbsp;is&nbsp;required&nbsp;if&nbsp;`diff_func`&nbsp;is&nbsp;not&nbsp;None.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;massConvInRegion&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;calculates&nbsp;the&nbsp;mass&nbsp;conservation&nbsp;loss&nbsp;only&nbsp;within&nbsp;the&nbsp;specified&nbsp;`region_mask`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;dataDiffInRegion&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;calculates&nbsp;the&nbsp;data&nbsp;misfit&nbsp;loss&nbsp;only&nbsp;within&nbsp;the&nbsp;specified&nbsp;`region_mask`.<br>
 &nbsp;<br>
 Raises:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;function&nbsp;names&nbsp;are&nbsp;invalid&nbsp;or&nbsp;sigmas&nbsp;are&nbsp;missing.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;function&nbsp;names&nbsp;are&nbsp;invalid&nbsp;or&nbsp;required&nbsp;`sigma`&nbsp;values&nbsp;are&nbsp;not&nbsp;provided.</span></dd></dl>
+
+<dl><dt><a name="chain_sgs-set_update_region"><strong>set_update_region</strong></a>(self, update_in_region, region_mask=[])</dt><dd><span class="code">Defines&nbsp;a&nbsp;spatial&nbsp;mask&nbsp;to&nbsp;constrain&nbsp;where&nbsp;topography&nbsp;updates&nbsp;can&nbsp;occur.<br>
+&nbsp;<br>
+Args:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;update_in_region&nbsp;(bool):&nbsp;If&nbsp;True,&nbsp;updates&nbsp;are&nbsp;restricted&nbsp;to&nbsp;the&nbsp;area&nbsp;defined&nbsp;by&nbsp;`region_mask`.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;region_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;specifying&nbsp;the&nbsp;update&nbsp;region.<br>
+&nbsp;<br>
+Raises:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ValueError:&nbsp;If&nbsp;`region_mask`&nbsp;does&nbsp;not&nbsp;match&nbsp;the&nbsp;shape&nbsp;of&nbsp;the&nbsp;grid&nbsp;in&nbsp;the&nbsp;initialization.</span></dd></dl>
 
 <hr>
 Data descriptors inherited from <a href="gstatsMCMC.MCMC.html#chain">chain</a>:<br>
@@ -515,23 +583,40 @@ Data descriptors inherited from <a href="gstatsMCMC.MCMC.html#chain">chain</a>:<
 <td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Functions</strong></td></tr>
     
 <tr><td class="decor functions-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
-<td class="singlecolumn"><dl><dt><a name="-fit_variogram"><strong>fit_variogram</strong></a>(data, coords, roughness_region_mask, maxlag, n_lags=50, samples=0.6, subsample=100000, data_for_trans=[])</dt><dd><span class="code">Fit&nbsp;and&nbsp;compare&nbsp;different&nbsp;variogram&nbsp;models&nbsp;to&nbsp;the&nbsp;given&nbsp;data.<br>
-Notice&nbsp;here&nbsp;by&nbsp;default&nbsp;nugget&nbsp;=&nbsp;0.&nbsp;If&nbsp;want&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;case&nbsp;of&nbsp;nugget&nbsp;!=&nbsp;0,&nbsp;need&nbsp;to&nbsp;rewrite&nbsp;the&nbsp;function.<br>
+<td class="singlecolumn"><dl><dt><a name="-fit_variogram"><strong>fit_variogram</strong></a>(data, coords, roughness_region_mask, maxlag, n_lags=50, samples=0.6, subsample=100000, data_for_trans=[])</dt><dd><span class="code">This&nbsp;function&nbsp;computes&nbsp;an&nbsp;experimental&nbsp;variogram&nbsp;from&nbsp;the&nbsp;input&nbsp;data&nbsp;and&nbsp;fits<br>
+several&nbsp;theoretical&nbsp;models&nbsp;(Gaussian,&nbsp;Exponential,&nbsp;Spherical,&nbsp;Matern)&nbsp;to&nbsp;it.<br>
+By&nbsp;default,&nbsp;the&nbsp;nugget&nbsp;is&nbsp;fixed&nbsp;at&nbsp;0.<br>
 &nbsp;<br>
 Args:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;data&nbsp;(2D&nbsp;numpy&nbsp;array):&nbsp;A&nbsp;column&nbsp;of&nbsp;input&nbsp;data&nbsp;to&nbsp;compute&nbsp;the&nbsp;variogram&nbsp;on.&nbsp;(use&nbsp;.reshape((-1,1))&nbsp;when&nbsp;the&nbsp;input&nbsp;data&nbsp;is&nbsp;not&nbsp;a&nbsp;column&nbsp;array)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;coords&nbsp;(2D&nbsp;numpy&nbsp;array):&nbsp;Coordinates&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;data,&nbsp;where&nbsp;each&nbsp;row&nbsp;representing&nbsp;a&nbsp;location&nbsp;in&nbsp;space,&nbsp;and&nbsp;first&nbsp;column&nbsp;is&nbsp;for&nbsp;x&nbsp;coordinate&nbsp;and&nbsp;second&nbsp;column&nbsp;for&nbsp;y&nbsp;coordinate<br>
-&nbsp;&nbsp;&nbsp;&nbsp;roughness_region_mask&nbsp;(2D&nbsp;array):&nbsp;Mask&nbsp;indicating&nbsp;region&nbsp;where&nbsp;roughness&nbsp;is&nbsp;evaluated&nbsp;(1&nbsp;=&nbsp;included).<br>
-&nbsp;&nbsp;&nbsp;&nbsp;maxlag&nbsp;(float):&nbsp;Maximum&nbsp;lag&nbsp;distance&nbsp;to&nbsp;consider&nbsp;in&nbsp;variogram.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;n_lags&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;lags&nbsp;to&nbsp;compute&nbsp;the&nbsp;variogram.&nbsp;Default&nbsp;is&nbsp;50.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;samples&nbsp;(float):&nbsp;Proportion&nbsp;of&nbsp;pairs&nbsp;of&nbsp;points&nbsp;used&nbsp;to&nbsp;compute&nbsp;the&nbsp;experimental&nbsp;variogram.&nbsp;Default&nbsp;is&nbsp;0.6.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;subsample&nbsp;(int):&nbsp;Number&nbsp;of&nbsp;samples&nbsp;for&nbsp;quantile&nbsp;transformation.&nbsp;Default&nbsp;is&nbsp;100000.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;data_for_trans&nbsp;(list):&nbsp;Optional,&nbsp;only&nbsp;used&nbsp;when&nbsp;the&nbsp;data&nbsp;used&nbsp;to&nbsp;compute&nbsp;the&nbsp;quantile&nbsp;transformation&nbsp;is&nbsp;different&nbsp;from&nbsp;the&nbsp;data&nbsp;transformed.&nbsp;This&nbsp;should&nbsp;be&nbsp;a&nbsp;column&nbsp;array&nbsp;containing&nbsp;data&nbsp;used&nbsp;to&nbsp;calculate&nbsp;quantile&nbsp;transformation<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data&nbsp;(np.ndarray):&nbsp;A&nbsp;column&nbsp;vector&nbsp;of&nbsp;shape&nbsp;(N,&nbsp;1)&nbsp;containing&nbsp;the&nbsp;input<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;data&nbsp;for&nbsp;variogram&nbsp;computation.&nbsp;Use&nbsp;`data.reshape((-1,&nbsp;1))`&nbsp;if&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;input&nbsp;is&nbsp;a&nbsp;1D&nbsp;array.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;coords&nbsp;(np.ndarray):&nbsp;An&nbsp;array&nbsp;of&nbsp;shape&nbsp;(N,&nbsp;2)&nbsp;with&nbsp;spatial&nbsp;coordinates<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;corresponding&nbsp;to&nbsp;the&nbsp;data.&nbsp;Each&nbsp;row&nbsp;represents&nbsp;a&nbsp;location,&nbsp;with&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;first&nbsp;column&nbsp;as&nbsp;the&nbsp;x-coordinate&nbsp;and&nbsp;the&nbsp;second&nbsp;as&nbsp;the&nbsp;y-coordinate.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;roughness_region_mask&nbsp;(np.ndarray):&nbsp;A&nbsp;binary&nbsp;mask&nbsp;of&nbsp;shape&nbsp;(M,&nbsp;N)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;identifying&nbsp;the&nbsp;region&nbsp;for&nbsp;roughness&nbsp;evaluation&nbsp;(1&nbsp;for&nbsp;included,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;for&nbsp;excluded).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;maxlag&nbsp;(float):&nbsp;The&nbsp;maximum&nbsp;lag&nbsp;distance&nbsp;to&nbsp;consider&nbsp;for&nbsp;the&nbsp;variogram.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;n_lags&nbsp;(int,&nbsp;optional):&nbsp;The&nbsp;number&nbsp;of&nbsp;lag&nbsp;bins&nbsp;for&nbsp;the&nbsp;experimental<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;variogram.&nbsp;Defaults&nbsp;to&nbsp;50.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;samples&nbsp;(float,&nbsp;optional):&nbsp;The&nbsp;proportion&nbsp;of&nbsp;data&nbsp;pairs&nbsp;to&nbsp;use&nbsp;when<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;computing&nbsp;the&nbsp;experimental&nbsp;variogram.&nbsp;Defaults&nbsp;to&nbsp;0.6.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;subsample&nbsp;(int,&nbsp;optional):&nbsp;The&nbsp;number&nbsp;of&nbsp;data&nbsp;points&nbsp;to&nbsp;use&nbsp;for&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;quantile&nbsp;transformation.&nbsp;Defaults&nbsp;to&nbsp;100,000.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;data_for_trans&nbsp;(np.ndarray,&nbsp;optional):&nbsp;A&nbsp;column&nbsp;vector&nbsp;of&nbsp;data&nbsp;used&nbsp;to<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;compute&nbsp;the&nbsp;quantile&nbsp;transformation,&nbsp;if&nbsp;different&nbsp;from&nbsp;`data`.<br>
 &nbsp;<br>
 Returns:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;nst_trans:&nbsp;QuantileTransformer&nbsp;<a href="builtins.html#object">object</a>&nbsp;used&nbsp;to&nbsp;normalize&nbsp;the&nbsp;data.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;transformed_data:&nbsp;Transformed&nbsp;data&nbsp;used&nbsp;in&nbsp;variogram&nbsp;calculation.<br>
-&nbsp;&nbsp;&nbsp;&nbsp;params&nbsp;(list):&nbsp;List&nbsp;of&nbsp;parameters&nbsp;for&nbsp;Gaussian,&nbsp;Exponential,&nbsp;Spherical,&nbsp;and&nbsp;Matern&nbsp;variogram&nbsp;models,&nbsp;containing&nbsp;range,&nbsp;sill,&nbsp;and&nbsp;nugget<br>
-&nbsp;&nbsp;&nbsp;&nbsp;fig:&nbsp;A&nbsp;matplotlib&nbsp;figure&nbsp;comparing&nbsp;experimental&nbsp;and&nbsp;modeled&nbsp;variograms.</span></dd></dl>
+&nbsp;&nbsp;&nbsp;&nbsp;tuple:&nbsp;A&nbsp;tuple&nbsp;containing&nbsp;the&nbsp;following:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nst_trans&nbsp;(sklearn.preprocessing.QuantileTransformer):&nbsp;The&nbsp;fitted<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;quantile&nbsp;transformer&nbsp;used&nbsp;for&nbsp;data&nbsp;normalization.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;transformed_data&nbsp;(np.ndarray):&nbsp;The&nbsp;quantile-transformed&nbsp;data&nbsp;used&nbsp;in<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;variogram&nbsp;calculation.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;params&nbsp;(list[dict]):&nbsp;A&nbsp;list&nbsp;of&nbsp;dictionaries,&nbsp;one&nbsp;for&nbsp;each&nbsp;fitted<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;model&nbsp;(Gaussian,&nbsp;Exponential,&nbsp;Spherical,&nbsp;Matern).&nbsp;Each&nbsp;dict<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;contains&nbsp;the&nbsp;'range',&nbsp;'sill',&nbsp;and&nbsp;'nugget'&nbsp;parameters.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fig&nbsp;(matplotlib.figure.Figure):&nbsp;A&nbsp;figure&nbsp;<a href="builtins.html#object">object</a>&nbsp;that&nbsp;plots&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;experimental&nbsp;variogram&nbsp;against&nbsp;the&nbsp;fitted&nbsp;theoretical&nbsp;models.</span></dd></dl>
 </td></tr></table>
 </body></html>

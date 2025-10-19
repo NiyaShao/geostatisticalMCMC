@@ -10,7 +10,6 @@ Created on Thu Jun 26 16:57:24 2025
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import pydoc
 
 from sklearn.preprocessing import QuantileTransformer
 import gstatsim as gs
@@ -22,26 +21,42 @@ from . import Topography
 
 def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, samples=0.6, subsample=100000, data_for_trans = []):
     """
-    Fit and compare different variogram models to the given data.
-    Notice here by default nugget = 0. If want to use for the case of nugget != 0, need to rewrite the function.
-    
-    Args:
-        data (2D numpy array): A column of input data to compute the variogram on. (use .reshape((-1,1)) when the input data is not a column array)
-        coords (2D numpy array): Coordinates corresponding to the data, where each row representing a location in space, and first column is for x coordinate and second column for y coordinate
-        roughness_region_mask (2D array): Mask indicating region where roughness is evaluated (1 = included).
-        maxlag (float): Maximum lag distance to consider in variogram.
-        n_lags (int): Number of lags to compute the variogram. Default is 50.
-        samples (float): Proportion of pairs of points used to compute the experimental variogram. Default is 0.6.
-        subsample (int): Number of samples for quantile transformation. Default is 100000.
-        data_for_trans (list): Optional, only used when the data used to compute the quantile transformation is different from the data transformed. This should be a column array containing data used to calculate quantile transformation
-    
-    Returns:
-        nst_trans: QuantileTransformer object used to normalize the data.
-        transformed_data: Transformed data used in variogram calculation.
-        params (list): List of parameters for Gaussian, Exponential, Spherical, and Matern variogram models, containing range, sill, and nugget
-        fig: A matplotlib figure comparing experimental and modeled variograms.
-    """
+    This function computes an experimental variogram from the input data and fits
+    several theoretical models (Gaussian, Exponential, Spherical, Matern) to it.
+    By default, the nugget is fixed at 0.
 
+    Args:
+        data (np.ndarray): A column vector of shape (N, 1) containing the input
+            data for variogram computation. Use `data.reshape((-1, 1))` if the
+            input is a 1D array.
+        coords (np.ndarray): An array of shape (N, 2) with spatial coordinates
+            corresponding to the data. Each row represents a location, with the
+            first column as the x-coordinate and the second as the y-coordinate.
+        roughness_region_mask (np.ndarray): A binary mask of shape (M, N)
+            identifying the region for roughness evaluation (1 for included,
+            0 for excluded).
+        maxlag (float): The maximum lag distance to consider for the variogram.
+        n_lags (int, optional): The number of lag bins for the experimental
+            variogram. Defaults to 50.
+        samples (float, optional): The proportion of data pairs to use when
+            computing the experimental variogram. Defaults to 0.6.
+        subsample (int, optional): The number of data points to use for the
+            quantile transformation. Defaults to 100,000.
+        data_for_trans (np.ndarray, optional): A column vector of data used to
+            compute the quantile transformation, if different from `data`.
+
+    Returns:
+        tuple: A tuple containing the following:
+            nst_trans (sklearn.preprocessing.QuantileTransformer): The fitted
+                quantile transformer used for data normalization.
+            transformed_data (np.ndarray): The quantile-transformed data used in
+                the variogram calculation.
+            params (list[dict]): A list of dictionaries, one for each fitted
+                model (Gaussian, Exponential, Spherical, Matern). Each dict
+                contains the 'range', 'sill', and 'nugget' parameters.
+            fig (matplotlib.figure.Figure): A figure object that plots the
+                experimental variogram against the fitted theoretical models.
+    """
     if len(data_for_trans)==0:
         nst_trans = QuantileTransformer(n_quantiles=500, output_distribution="normal",random_state=0,subsample=subsample).fit(data)
     else:
@@ -105,35 +120,69 @@ def fit_variogram(data, coords, roughness_region_mask, maxlag, n_lags=50, sample
     return nst_trans, transformed_data, [tp1, tp2, tp3, tp4], fig
 
 class RandField:
-    """
-    a class used to represent unconditional or conditional random field
+    """Generates 2D random fields based on specified variogram models.
+
+    This class creates random fields with defined spatial statistics. It can produce both unconditional fields and conditional fields, where conditioning is achieved using a weighting scheme based on the distance to known data points.
+
+    Before generating fields, the `set_block_sizes` and `set_weight_param` methods must be called to initialize the simulation and conditioning parameters.
+
+    Attributes:
+        range_min_x (float): Minimum spatial correlation range in x-direction. The range in x-direction for each realization is randomly sampled between `range_min_x` and `range_max_x`. Similarly, the range in y-direction is randomly sampled between `range_min_y` and `range_max_y`.
+        range_max_x (float): Maximum spatial correlation range in x-direction.
+        range_min_y (float): Minimum spatial correlation range in y-direction.
+        range_max_y (float): Maximum spatial correlation range in y-direction.
+        scale_min (float): Minimum vertical scaling (standard deviation).
+        scale_max (float): Maximum vertical scaling (standard deviation).
+        nugget_max (float): Maximum nugget effect.
+        model_name (str): The variogram model type ('Gaussian', 'Exponential', or 'Matern').
+        isotropic (bool): Flag for isotropic (True) or anisotropic (False) fields.
+        smoothness (float): Smoothness parameter for the Matern model.
+        rng_seed (int): Seed for the random number generator.
+        rng (np.random.Generator): The random number generator instance.
+        pairs (list[tuple]): List of (block_width, block_height) tuples generated by `set_block_sizes`.
+        logistic_param (list[float]): Parameters [L, x0, k, offset] for the logistic weighting function.
+        max_dist (float): Maximum distance used for scaling the logistic weighting mask.
+        resolution (float): Spatial resolution of the grid for conditioning.
+        edge_masks (np.ndarray): Precomputed masks for applying conditioning weights at edges.
     """
     
     def __init_func(self):
-        print('before using the RandField object in the MCMC chain, please set up its block sizes using set_block_sizes function, and set up conditional weight using set_block_param function')
+        print("Before using the `RandField` object in an MCMC chain or for field generation, call method `set_block_sizes` and method`set_weight_param` to initialize block size ranges and conditional weighting parameters.")
 
-    def __init__(self,range_max_x,range_max_y,range_min_x,range_min_y,scale_min,scale_max,nugget_max,model_name,isotropic,smoothness = None, rng='default'):
-        """
-        Initialize a RandField object for generating conditional or unconditional random field.
-    
+    def __init__(self,range_min_x,range_max_x,range_min_y,range_max_y,scale_min,scale_max,nugget_max,model_name,isotropic,smoothness = None, rng_seed=None):
+        """Initializes the RandField object.
+
+        This method sets up the parameters for generating random fields based on specified spatial correlation ranges, variogram model type, and scaling. Anisotropy and nugget effects can be included. 
+        A NumPy random number generator is initialized using `np.random.default_rng()`, and seeds to this generator is optional. 
+        The maximum range values must be greater than or equal to the corresponding minimums, and a `smoothness` value is required if `model_name` is 'Matern'.
+
         Args:
-            range_max_x (float): Maximum spatial correlation range in x-direction. The random field will randomly sampled between range_max_x and range_min_x to determine its range in the x direction, and similarly for range in y direction.
-            range_max_y (float): Maximum range in y-direction.
-            range_min_x (float): Minimum range in x-direction.
-            range_min_y (float): Minimum range in y-direction.
-            scale_min (float): Minimum vertical scaling (std dev) of field.
-            scale_max (float): Maximum vertical scaling of field.
+            range_min_x (float): Minimum spatial correlation range in the x-direction. The actual range is randomly sampled between `range_min_x` and `range_max_x`.
+            range_max_x (float): Maximum spatial correlation range in the x-direction.
+            range_min_y (float): Minimum spatial correlation range in the y-direction. The actual range is randomly sampled between `range_min_y` and `range_max_y`.
+            range_max_y (float): Maximum spatial correlation range in the y-direction.
+            scale_min (float): Minimum vertical scaling (standard deviation) of the random field.
+            scale_max (float): Maximum vertical scaling (standard deviation) of the random field.
             nugget_max (float): Maximum nugget effect in the variogram.
-            model_name (str): Variogram model type ('Gaussian', 'Exponential', 'Matern').
-            isotropic (bool): Whether to enforce isotropic spatial correlation. If isotropic is set to False, then fields with random anistropy direction will be generated, where the strength of anistropy is dependent on the ratio between range in x-direction and in y-direction.
-            smoothness (float): Variogram smoothness 
-            rng (str or Generator): (optional) Random number generator or string 'default'.
+            model_name (str): The variogram model type used for defining spatial covariance ('Gaussian', 'Exponential', or 'Matern').
+            isotropic (bool): If True, enforces isotropic spatial correlation. If False, generates fields with random anisotropy, where the strength depends on the ratio between x- and y-direction ranges.
+            smoothness (float, optional): The smoothness parameter for the Matern variogram model. Required if `model_name='Matern'`.
+            rng_seed (int, optional): The seed for the NumPy random number generator. If None, a random seed is used. If a seed is used, the RandField object will produce a fixed sequence of conditional / unconditional random fields. Pass the RandField object to two different MCMC chain will not "re-initiate" the random generator.
         """
-        
-        if rng == 'default':
-            self.rng = np.random.default_rng()
-        else: # TODO, check if passed rng is a actual generator
-            self.rng = rng
+            
+        if rng_seed is None:
+            rng = np.random.default_rng()
+        elif isinstance(rng_seed, int):
+            rng = np.random.default_rng(seed=rng_seed)
+        elif isinstance(rng_seed, np.random._generator.Generator):
+            rng = rng_seed
+        else:
+            raise ValueError('Seed should be an integer, a NumPy random Generator, or None')
+ 
+        self.rng = rng
+            
+        if (range_max_x < range_min_x) or (range_max_y < range_min_y):
+            print('the maximum range must be greater to equal to the minimum range')
         
         self.range_max_x = range_max_x
         self.range_max_y = range_max_y
@@ -154,16 +203,16 @@ class RandField:
            
     def set_block_sizes(self,min_block_x,max_block_x,min_block_y,max_block_y,steps=5):
         """
-        Set the allowable range of block sizes used for random field generation.
-        The function has no returned value. But the effect can be evaluated by the 'pair' attribute of the RandField object
+        Defines the minimum and maximum block dimensions in x and y directions and determines the number of discrete block sizes between them. This method does not return a value; the resulting block size pairs are stored in the ``pairs`` attribute.
         
         Args:
-            min_block_x (int): Minimum block width.
-            max_block_x (int): Maximum block width.
-            min_block_y (int): Minimum block height.
-            max_block_y (int): Maximum block height.
-            steps (int): Number of steps between min and max, determining number of different sizes between min_x and max_x or between min_y and max_y Default is 5.
+            min_block_x (int): The minimum block width.
+            max_block_x (int): The maximum block width.
+            min_block_y (int): The minimum block height.
+            max_block_y (int): The maximum block height.
+            steps (int, optional): The number of size intervals between the minimum and maximum values. Defaults to 5.
         """
+        
         self.min_block_x = min_block_x
         self.min_block_y = min_block_y
         self.max_block_x = max_block_x
@@ -172,32 +221,38 @@ class RandField:
 
         self.pairs = self.get_block_sizes()
     
-    def set_block_param(self, logis_func_L, logis_func_x0, logis_func_k, logis_func_offset, max_dist, resolution):
+    def set_weight_param(self, logis_func_L, logis_func_x0, logis_func_k, logis_func_offset, max_dist, resolution):
         """
-        Set logistic function parameters for generating conditioning weight used on both conditioning to the data and conditioning to the edge of the block
-        The logistic function has a format of f(x) = (L / (1 + exp(-k(x - x0)))) - offset, where the x here represent the distance to the nearest conditioning data
-        In the generated conditioning weight, the weight is highest (1) at the conditioning data, and has a logistic decay based on distance to the nearest conditioning data
-        
-        
+        Set logistic function parameters for computing conditioning weights.
+    
+        The logistic function is defined as ``f(x) = (L / (1 + exp(-k(x - x0)))) - offset``, where ``x`` is the distance to the nearest conditioning data point. The resulting weight equals 1 at conditioning data locations and decays logistically with distance 'x'.
+    
         Args:
-            logis_func_L (float): L parameter of logistic function.
-            logis_func_x0 (float): Midpoint x0 of logistic function.
-            logis_func_k (float): Growth rate k of logistic function.
-            logis_func_offset (float): Constant subtracted from logistic output.
-            max_dist (float): Max distance for mask scaling.
-            resolution (float): Grid cell resolution.
+            logis_func_L (float): The upper limit (L) of the logistic function.
+            logis_func_x0 (float): The distance value (x0) where the function reaches its midpoint.
+            logis_func_k (float): The growth rate (k) of the logistic curve.
+            logis_func_offset (float): A constant offset subtracted from the logistic function's output.
+            max_dist (float): The maximum distance used for scaling the weighting mask.
+            resolution (float): The spatial resolution of the grid.
         """
+        
         if not hasattr(self, 'pairs'):
-            raise Exception('It seems like the set_block_sizes has not been called yet before calling set_block_param')
+            raise Exception('It seems like the set_block_sizes has not been called yet before calling set_weight_param')
         
         self.logistic_param = [logis_func_L, logis_func_x0, logis_func_k, logis_func_offset]
         self.max_dist = max_dist
         self.resolution = resolution
-        
         self.edge_masks = self.get_edge_masks()
         
     
     def get_block_sizes(self):
+        """
+        Internal function. Calculate the discrete block sizes from set_block_size()
+
+        Returns:
+            pairs (np.ndarray) : An array of shape (2, N) containing the discrete block sizes. The first row holds the widths and the second row holds the heights.
+        """
+        
         width = np.linspace(self.min_block_x,self.max_block_x,self.steps,dtype=int)
         height = np.linspace(self.min_block_y,self.max_block_y,self.steps,dtype=int)
         w,h = np.meshgrid(width,height)
@@ -206,6 +261,16 @@ class RandField:
         return pairs
     
     def get_edge_masks(self):
+        """
+        Generate block-edge conditioning masks for each block size.
+        For each block defined in ``pairs``, this method computes a distance-based logistic weighting mask along the block edges. The resulting masks are used for conditioning random fields near block boundaries.
+        
+        Returns:
+            edge_masks (list : List of 2D arrays representing edge conditioning masks for each block size.
+        """
+        
+        if not hasattr(self, 'pairs'):
+            raise Exception('It seems like the set_block_sizes has not been called yet before calling get_edge_mask')
         
         edge_masks = []
         pairs = self.pairs
@@ -214,36 +279,48 @@ class RandField:
         for i in range(pairs.shape[1]):
             bwidth = pairs[:,i][0]
             bheight = pairs[:,i][1]
+            
             xx,yy=np.meshgrid(range(bwidth),range(bheight))
             xx = xx*res 
             yy = yy*res
+            
+            # make a mask of the block boundaries
             cond_msk_edge = np.zeros((bheight,bwidth))
             cond_msk_edge[0,:]=1
             cond_msk_edge[bheight-1,:]=1
             cond_msk_edge[:,0]=1
             cond_msk_edge[:,bwidth-1]=1
+            
+            # calculate the distance to block boundaries
             dist_edge = RandField.min_dist(np.where(cond_msk_edge==0, np.nan, 1), xx, yy)
+            # re-scale the distance by the maximum correlation distance
             dist_rescale_edge = RandField.rescale(dist_edge, self.max_dist)
+            # calculate the logistic function
             dist_logi_edge = RandField.logistic(dist_rescale_edge, self.logistic_param[0], self.logistic_param[1], self.logistic_param[2]) - self.logistic_param[3]
             edge_masks.append(dist_logi_edge)
 
         return edge_masks
     
-    def get_random_field(self,X,Y,_mean=0,_var=1, n=1):
-        """
-        Generate a random field using specified model parameter when initiating the RandField object.
-        
+    def get_random_field(self,X,Y,n=1):
+        """Generates random field realizations.
+
+        This method samples variogram parameters (e.g., range, sill, nugget) from the ranges specified in the object's attributes.
+        It then creates one or more spatial random fields on the provided grid using the selected covariance model.
+
         Args:
-            X (1D numpy array): x-coordinates of the grid.
-            Y (1D numpy array): y-coordinates of the grid.
-            _mean (float): Mean of the field. Default is 0. Do not change it
-            _var (float): Variance of the field. Default is 1. Do not change it
-        
+            X (np.ndarray): A 1D array of the grid's x-coordinates.
+            Y (np.ndarray): A 1D array of the grid's y-coordinates.
+            n (int, optional): The number of random field realizations to generate. Defaults to 1.
+
         Returns:
-            field (2D numpy array): Realization of the random field.
-        """    
+            np.ndarray: A 3D array of shape (n, len(Y), len(X)) containing the generated random fields.
+        """
         
         rng = self.rng
+        
+        _mean=0
+        _var=1
+        
         scale  = rng.uniform(low=self.scale_min, high=self.scale_max, size=1)[0]/3
         nug = rng.uniform(low=0.0, high=self.nugget_max, size=1)[0]
         
@@ -285,6 +362,11 @@ class RandField:
         return fields
     
     def min_dist(hard_mat, xx, yy):
+        """
+        Compute the minimum Euclidean distance to non-NaN points.
+        
+        Notes: This is an internal helper function and not intended for direct use.
+        """
         dist = np.zeros(xx.shape)
         xx_hard = np.where(np.isnan(hard_mat), np.nan, xx)
         yy_hard = np.where(np.isnan(hard_mat), np.nan, yy)
@@ -295,31 +377,43 @@ class RandField:
         return dist
 
     def rescale(x, maxdist):
+        """
+        Rescale distance values by the specified maximum distance.
+        
+        Notes: This is an internal helper function and not intended for direct use.
+        """
         return np.where(x>maxdist,1,(x/maxdist))
 
     def logistic(x, L, x0, k):
+        """
+        Evaluate the logistic function with given parameters.
+        
+        Notes: is an internal helper function and not intended for direct use.
+        """
         return L/(1+np.exp(-k*(x-x0)))
     
     def get_crf_weight(self,xx,yy,cond_data_mask):
         """
-        Generate conditional random field weights from conditioning data mask.
-        
+        This method generates weights for a conditional random field using a mask showing locations of the conditioning data. 
+
         Args:
-            xx (2D array): x-coordinate grid.
-            yy (2D array): y-coordinate grid.
-            cond_data_mask (2D array): Binary mask of conditioning data (1 = present).
-        
+            xx (np.ndarray): A 2D array of the grid's x-coordinates.
+            yy (np.ndarray): A 2D array of the grid's y-coordinates.
+            cond_data_mask (np.ndarray): A 2D array showing locations of conditioning data. (1 = have data, 0 = do not have data)
+
         Returns:
-            weight (2D array): weight used to condition the field to conditioning data
-            dist (2D array): Distance to conditioning points.
-            dist_rescale (2D array): Scaled distances, where 0 correspond to 0, and 1 correspond to self.max_dist.
-            dist_logi (2D array): The raw logistic function values
-            
+            weight (np.ndarray): 2D array. The final conditioning weights.
+            dist (np.ndarray): 2D array. The minimal distance to the closest conditioning data.
+            dist_rescale (np.ndarray): 2D array. The distance array scaled such that `self.max_dist` maps to 1.
+            dist_logi (np.ndarray): 2D array. The raw output of the logistic function applied to the rescaled distances.
         """
         logistic_param = self.logistic_param
         max_dist = self.max_dist
+        # calculate the distance to block boundaries
         dist = RandField.min_dist(np.where(cond_data_mask==0, np.nan, 1), xx, yy)
+        # re-scale the distance by the maximum correlation distance
         dist_rescale = RandField.rescale(dist, max_dist)
+        # calculate the logistic function
         dist_logi = RandField.logistic(dist_rescale, logistic_param[0], logistic_param[1], logistic_param[2]) - logistic_param[3]
 
         weight = dist_logi - np.min(dist_logi)
@@ -327,19 +421,19 @@ class RandField:
 
     def get_crf_weight_from_dist(self,xx,yy,dist):
         """
-        Generate conditional random field weights from calculated distance. 
-        Used in large domain where calculating distance takes too long and thus the distance could be previously saved in files
-        
+        This method generates weights for a conditional random field using a distance array that has already been computed. 
+        It is useful for large domains where calculating distances on-the-fly is computationally expensive, allowing the distance array to be loaded from a file instead.
+
         Args:
-            xx (2D array): x-coordinate grid.
-            yy (2D array): y-coordinate grid.
-            cond_data_mask (2D array): Binary mask of conditioning data (1 = present).
-            dist (2D array): Distance to conditioning points.
-        
+            xx (np.ndarray): A 2D array of the grid's x-coordinates.
+            yy (np.ndarray): A 2D array of the grid's y-coordinates.
+            dist (np.ndarray): A 2D array containing the pre-calculated distance to the nearest conditioning point for each grid cell.
+
         Returns:
-            weight (2D array): weight used to condition the field to conditioning data
-            dist_rescale (2D array): Scaled distances, where 0 correspond to 0, and 1 correspond to self.max_dist.
-            dist_logi (2D array): The raw logistic function values
+            weight (np.ndarray): 2D array. The final conditioning weights.
+            dist (np.ndarray): 2D array. The original, unmodified distance array passed to the function.
+            dist_rescale (np.ndarray): 2D array. The distance array scaled such that `self.max_dist` maps to 1.
+            dist_logi (np.ndarray): 2D array. The raw output of the logistic function applied to the rescaled distances.
         """
         logistic_param = self.logistic_param
         max_dist = self.max_dist
@@ -384,38 +478,56 @@ class RandField:
     
 class chain:
     """
-    parent class for both the crf_chain and sgs_chain
+    A base class for setting up a Markov chain for MCMC topography sampling.
+
+    This class handles the initialization of data and the configuration of the loss function for its child classes (e.g., crf_chain, sgs_chain).
+    
+    Parameters:
+        xx, yy, initial_bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution: As defined in the initialization function
+        update_in_region (bool): If 'True', the block update will only happen within the region. If 'False', the block update will happen for the entire map
+        region_mask (numpy.ndarray): The 2D mask defining the region where block update occur (1 = inside the region, 0 = outside the region).
+        mc_region_mask (numpy.ndarray): The 2D mask defining the region where the mass conservation loss is calculated (1 = inside the region, 0 = outside the region).
+        data_region_mask (numpy.ndarray): The 2D mask defining the region where the data misfit loss is calculated (1 = inside the region, 0 or np.nan = outside the region).
+        sigma_mc (float): standard deviation for the mass conservation loss, when the 'map_func' is 'sumsquare' (a.k.a. the mass flux residuals have gaussian distributions)
+        sigma_mc (float): standard deviation for the data misfit loss, when the 'diff_func' is 'sumsquare' (a.k.a. the data misfits have gaussian distributions)
+        map_func (string): A string for choosing the function to calculate for mass conservation loss.
+        diff_func (string): A string for choosing the function to calculate for data misfit loss.
+        loss_function_list (list): A list of two functions used for mass conservation loss and data misfit loss respective.
     """
 
     def __init_func__(self):
+        """
+        A placeholder function for printing out notes and instruction on setting-up the chain
+
+        No returns.
+        """
+        
         return
     
-    def __init__(self, xx, yy, bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution):
+    def __init__(self, xx, yy, initial_bed, surf, velx, vely, dhdt, smb, cond_bed, data_mask, grounded_ice_mask, resolution):
+        """Initializes the MCMC chain with input data and model geometry.
 
-        """
-        Initialize the Markov chain object for topography sampling.
-        The function has no returns but the input argument are stored in the chain object
-        
         Args:
-            xx, yy (2D array): x and y coordinates of the map grid.
-            bed (2D array): Initial bed topography.
-            surf (2D array): Ice surface elevation.
-            velx, vely (2D array): Ice surface velocity in x direction and in y direction.
-            dhdt (2D array): Surface height change rate (annual average).
-            smb (2D array): Surface mass balance (annual average).
-            cond_bed (2D array): Conditioning radar bed measurements in the shape of the 2D domain. For locations without measurement, the value is nan
-            data_mask (2D array): Mask of where conditioning data exists (1 = exist).
-            grounded_ice_mask (2D array): Binary mask of grounded ice (1 = grounded).
-            resolution (float): Spatial resolution in meters.
-        
+            xx (np.ndarray): A 2D array of grid x-coordinates.
+            yy (np.ndarray): A 2D array of grid y-coordinates.
+            initial_bed (np.ndarray): The initial bed topography guess.
+            surf (np.ndarray): The ice surface elevation.
+            velx (np.ndarray): The ice surface velocity in the x-direction.
+            vely (np.ndarray): The ice surface velocity in the y-direction.
+            dhdt (np.ndarray): The rate of surface height change.
+            smb (np.ndarray): The surface mass balance.
+            cond_bed (np.ndarray): Conditioning radar bed measurements. Grid cells without data should be marked with NaN.
+            data_mask (np.ndarray): A binary mask where 1 indicates the presence of conditioning data.
+            grounded_ice_mask (np.ndarray): A binary mask where 1 indicates grounded ice.
+            resolution (float): The spatial resolution of the grid in meters.
+
         Raises:
             Exception: If input arrays do not have matching shapes.
-            
         """
         
         self.xx = xx
         self.yy = yy
-        self.bed = bed
+        self.initial_bed = initial_bed
         self.surf = surf
         self.velx = velx
         self.vely = vely
@@ -427,42 +539,87 @@ class chain:
         self.resolution = resolution
         self.loss_function_list = []
         
-        if (bed.shape!=surf.shape) or (bed.shape!=velx.shape) or (bed.shape!=vely.shape) or (bed.shape!=dhdt.shape) or (bed.shape!=smb.shape) or (bed.shape!=cond_bed.shape) or (bed.shape!=data_mask.shape):
+        if (initial_bed.shape!=surf.shape) or (initial_bed.shape!=velx.shape) or (initial_bed.shape!=vely.shape) or (initial_bed.shape!=dhdt.shape) or (initial_bed.shape!=smb.shape) or (initial_bed.shape!=cond_bed.shape) or (initial_bed.shape!=data_mask.shape):
             raise Exception('the shape of bed, surf, velx, vely, dhdt, smb, radar_bed, data_mask need to be same')
         
         self.__init_func__()
         
-    def set_high_vel_region(self, update_in_region, region_mask = []):
+    def set_update_region(self, update_in_region, region_mask = []):
         """
-        Define spatial region where ice surface velocity is high to constrain the location of updates.
-        
+        Defines a spatial mask to constrain where topography updates can occur.
+
         Args:
-            update_in_region (bool): Whether to constrain updates to region_mask.
-            region_mask (2D array): Binary mask specifying region of interest.
-        
+            update_in_region (bool): If True, updates are restricted to the area defined by `region_mask`.
+            region_mask (np.ndarray): A binary mask specifying the update region.
+
         Raises:
-            ValueError: If region_mask has incorrect shape.
+            ValueError: If `region_mask` does not match the shape of the grid in the initialization.
         """
-       
-        if region_mask.shape != self.xx.shape:
-            raise ValueError('the region_mask input is invalid. It has to be a 2D numpy array with the shape of the map')
-        else:
-            self.region_mask = region_mask
+        
+        self.update_in_region = update_in_region
         
         if update_in_region == False:
             print('the update blocks is set to be randomly generated for any locations inside the entire map')
-        self.update_in_region = update_in_region
+            self.region_mask = np.full(self.xx.shape, 1)
+        else:
+            if region_mask.shape != self.xx.shape:
+                raise ValueError('the region_mask input is invalid. It has to be a 2D numpy array with the shape of the map')
+                self.region_mask = None
+            else:
+                print('the update blocks is set to be randomly generated for any locations inside the given region')
+                self.region_mask = region_mask
+
     
     def __meanabs(data,mask):
+        """
+        A loss function, return the mean of absolute values of data inside the mask
+        
+        Args:
+            data (np.ndarray): a 2D numpy array for calculating the loss
+            mask (np.ndarray): a 2D numpy array of booleans specifying locations to calculate the loss. (1 = calculate loss, 0 = do not calculate the loss)
+            
+        Returns:
+            the mean of absolute data inside the mask
+        """
         return np.nanmean(np.abs(data[mask==1]))
     
     def __meansq(data,mask):
+        """
+        A loss function, return the mean of squared data inside the mask
+        
+        Args:
+            data (np.ndarray): a 2D numpy array for calculating the loss
+            mask (np.ndarray): a 2D numpy array of booleans specifying locations to calculate the loss. (1 = calculate loss, 0 = do not calculate the loss)
+            
+        Returns:
+            the mean of squared data inside the mask
+        """
         return np.nanmean(np.square(data[mask==1]))
     
     def __sumabs(data,mask):
+        """
+        A loss function, return the sum of absolute values of data inside the mask
+        
+        Args:
+            data (np.ndarray): a 2D numpy array for calculating the loss
+            mask (np.ndarray): a 2D numpy array of booleans specifying locations to calculate the loss. (1 = calculate loss, 0 = do not calculate the loss)
+            
+        Returns:
+            the sum of the absolute data value inside the mask
+        """
         return np.nansum(np.abs(data[mask==1]))
     
     def __sumsq(data,mask):
+        """
+        A loss function, return the sum of squared data inside the mask
+        
+        Args:
+            data (np.ndarray): a 2D numpy array for calculating the loss
+            mask (np.ndarray): a 2D numpy array of booleans specifying locations to calculate the loss. (1 = calculate loss, 0 = do not calculate the loss)
+            
+        Returns:
+            the sum of the squared data inside the mask
+        """
         return np.nansum(np.square(data[mask==1]))
     
     def __return0(data,mask):
@@ -471,26 +628,19 @@ class chain:
     def set_loss_type(self, map_func = None, diff_func = None, sigma_mc = -1, sigma_data = -1, massConvInRegion = True, dataDiffInRegion = False):
         """
         Configure loss function used in MCMC chain
-        Currently enable two losses to be used: mass conservation residual and misfit to radar measurements.
+        Currently enable either of losses (or both) to be used: mass flux residuals and misfit to radar measurements.
         The function has no return. Its effect can be checked in chain object's 'loss_function_list' attribute
         
         Args:
-            map_func (str): Function to use for mass conservation residual ('meanabs', 'meansquare', 'sumabs', 'sumsquare', None). 
-            Default is None. If set to None, then mass conservation residual is not used for calculating the loss.
-            'sumsquare' correspond to treat the residual as Gaussian distribution
-            
-            diff_func (str): Function to use for misfit to radar measurements ('meanabs', 'meansquare', 'sumabs', 'sumsquare', None). 
-            Default is None. If set to None, then mass conservation residual is not used for calculating the loss.
-            'sumsquare' correspond to treat the misfit as Gaussian distribution
-            
-            sigma_mc (float): Standard deviation for mass conservation residual.
-            sigma_data (float): Standard deviation for data misfit.
-            massConvInRegion (bool): Whether to calculate mass conservation residual only in region_mask.
-            dataDiffInRegion (bool): Whether to calculate data misfit loss only in region_mask.
-        
+            map_func (str, optional): The aggregation function for the mass flux residuals ('meanabs', 'meansquare', 'sumabs', 'sumsquare'). 'sumsquare' corresponds to a Gaussian likelihood. If None, this loss component is ignored.
+            diff_func (str, optional): The aggregation function for the radar data misfit ('meanabs', 'meansquare', 'sumabs', 'sumsquare'). 'sumsquare' corresponds to a Gaussian likelihood. If None, this loss component is ignored.
+            sigma_mc (float): The standard deviation for the mass flux residuals likelihood. This is required if `map_func` is not None.
+            sigma_data (float): The standard deviation for the data misfit likelihood. This is required if `diff_func` is not None.
+            massConvInRegion (bool): If True, calculates the mass conservation loss only within the specified `region_mask`.
+            dataDiffInRegion (bool): If True, calculates the data misfit loss only within the specified `region_mask`.
+
         Raises:
-            ValueError: If function names are invalid or sigmas are missing.
-    
+            ValueError: If function names are invalid or required `sigma` values are not provided.
         """
     
         function_list = []
@@ -545,17 +695,16 @@ class chain:
         self.loss_function_list = function_list
     
     def loss(self, massConvResidual, dataDiff):
-        """
-        Compute total loss from mass conservation residuals and data misfit by applying function defined in set_loss_type
-        
+        """Computes the value of the loss function for a candidate topography.
+
         Args:
-            massConvResidual (2D array): Mass conservation residual field.
-            dataDiff (2D array): Difference between candidate and observed bed elevation.
-        
+            massConvResidual (np.ndarray): A 2D array of the mass flux residuals field.
+            dataDiff (np.ndarray): A 2D array of the difference between the candidate topography and observed bed elevation.
+
         Returns:
-            total_loss (float): Combined loss value.
-            loss_mc (float): Loss due to mass conservation residual.
-            loss_data (float): Loss due to data misfit.
+            total_loss (float): The combined, weighted loss value.
+            loss_mc (float): The loss component from mass conservation.
+            loss_data (float): The loss component from data misfit.
         """
         
         f1 = self.loss_function_list[0]
@@ -569,11 +718,15 @@ class chain:
       
 class chain_crf(chain):
     """
-    Inherit the chain class. Used for creating random field-based MCMC chains. Can choose between conditional or unconditional random fields
+    Inherit the chain class. Used for creating random field-based MCMC chains. Can choose between conditional or unconditional random fields.
+    
+    Parameters in addition to chain's parameters:
+        block_type (String): Specifying uncondtional or conditional random field, 'CRF_weight' or 'RF'.
+        crf_data_weight (numpy.ndarray): A 2D array of the data weight to ensure that the updates will not perturb the conditioning data.
     """ 
     
     def __init_func__(self):
-        print('before running the chain, please set where the block update will be using the object's function set_high_vel_region(update_in_region, region_mask)')
+        print('before running the chain, please set where the block update will be using the object\'s function set_update_region(update_in_region, region_mask)')
         print('then please set up the loss function using either set_loss_type or set_loss_func')
         print('an RandField object also need to be created correctly and passed in set_crf_data_weight(RF) and in run(n_iter, RF)')
         return
@@ -581,10 +734,11 @@ class chain_crf(chain):
     def set_update_type(self, block_type):
         """
         Set types of the perturbation blocks. 
-        For now, can choose from unconditional random field ('RF') or conditional random field created by logistic weighting (CRF_weight)
+        For the current version of the algorithm, can choose from unconditional random field ('RF') or conditional random field ('CRF') created by logistic weighting (CRF_weight)
+        The function has no returns. Its effect can be checked in the object's parameter 'block_type'
         
         Args:
-            block_type (str): 'CRF_weight', 'CRF_rbf' (not implemented), or 'RF'.
+            block_type (str): 'CRF_weight' or 'RF'.
         
         Raises:
             ValueError: If block_type is invalid.
@@ -605,36 +759,43 @@ class chain_crf(chain):
     
     def set_crf_data_weight(self, RF):
         """
-        Calculate and store CRF weights from conditioning data using RandField object.
+        Calculate and store conditioning random field weights from conditioning data.
+        The function has no returns. Its effect can be checked in the object's parameter 'crf_data_weight'
         
         Args:
-            RF (RandField): A RandField object configured for CRF weight generation.
+            RF (RandField): A RandField object with the logistic function parameters configured.
         """
         
         crf_weight, dist, dist_rescale, dist_logi = RF.get_crf_weight(self.xx,self.yy,self.data_mask)
         self.crf_data_weight = crf_weight
 
-    def run(self, n_iter, RF, rng='default'):
-        """
-        Run the MCMC chain using block-based CRF/RF perturbations.
-        
+    def run(self, n_iter, RF, rng_seed=None, only_save_last_bed=False, info_per_iter = 1000):
+        """Runs the MCMC sampling chain to generate topography realizations.
+
         Args:
-            n_iter (int): Number of iterations in the MCMC chain.
-            RF (RandField): Random field generator.
-            rng (str or np.random.Generator): Random number generator. Default is 'default', which makes a random generator with random seeds
-        
+            n_iter (int): The total number of MCMC iterations to perform.
+            RF (RandField): An initialized `RandField` object used to generate the topography perturbations.
+            rng_seed (int, optional): A seed for the random number generator to ensure reproducibility. Defaults to None.
+            only_save_last_bed (bool): If True, only the final topography is returned. If False, the topography from every iteration is saved, which requires more memory.
+            info_per_iter (int): The iteration interval for printing progress updates, such as loss and acceptance rate, to the console.
+
         Returns:
-            bed_cache (4D array): Topography at each iteration.
-            loss_mc_cache (1D array): Mass conservation residual loss at each iteration. If the mass conservation loss is not used, return array of 0
-            loss_data_cache (1D array): Data misfit loss at each iteration. If the data misfit loss is not used, return array of 0
-            loss_cache (1D array): Total loss at each iteration.
-            step_cache (1D array): Boolean indicating if the step was accepted.
-            resampled_times (2D array): Number of times each pixel was updated.
-            blocks_cache (2D array): Info on block proposals at each iteration.
+            bed_cache (np.ndarray): A 4D array of saved topographies if `only_save_last_bed` is False, or a 2D array of the final topography if True.
+            loss_mc_cache (np.ndarray): A 1D array of the mass conservation loss at each iteration. If no mass conservation loss is set, will return zeros.
+            loss_data_cache (np.ndarray): A 1D array of the data misfit loss at each iteration. If no data misfit loss is set, will return zeros.
+            loss_cache (np.ndarray): A 1D array of the total loss (mass conservation loss + data misfit loss) at each iteration.
+            step_cache (np.ndarray): A 1D boolean array indicating whether the proposal was accepted at each iteration.
+            resampled_times (np.ndarray): A 2D array counting how many times each grid cell was part of an accepted proposal.
+            blocks_cache (np.ndarray): A 2D array logging the location and size `[row, col, height, width]` of the proposed update block at each iteration.
         """
-        
-        if rng == 'default':
+        if rng_seed is None:
             rng = np.random.default_rng()
+        elif isinstance(rng_seed, int):
+            rng = np.random.default_rng(seed=rng_seed)
+        elif isinstance(rng_seed, np.random._generator.Generator):
+            rng = rng_seed
+        else:
+            raise ValueError('Seed should be an integer, a NumPy random Generator, or None')
             
         if not isinstance(RF, RandField):
             raise TypeError('The arugment "RF" has to be an object of the class RandField')
@@ -644,15 +805,17 @@ class chain_crf(chain):
         loss_data_cache = np.zeros(n_iter)
         loss_cache = np.zeros(n_iter)
         step_cache = np.zeros(n_iter)
-        bed_cache = np.zeros((n_iter, self.xx.shape[0], self.xx.shape[1]))
+        if ~only_save_last_bed:
+            bed_cache = np.zeros((n_iter, self.xx.shape[0], self.xx.shape[1]))
         blocks_cache = np.full((n_iter, 4), np.nan)
         resampled_times = np.zeros(self.xx.shape)
         
-        # TODO: should i have an additional property called initial_bed?
-        bed_c = self.bed
+        bed_c = self.initial_bed
+
+        resolution = self.resolution
         
         # initialize loss
-        mc_res = Topography.get_mass_conservation_residual(bed_c, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+        mc_res = Topography.get_mass_conservation_residual(bed_c, self.surf, self.velx, self.vely, self.dhdt, self.smb, resolution)
         data_diff = bed_c - self.cond_bed
         loss_prev, loss_prev_mc, loss_prev_data = self.loss(mc_res,data_diff)
 
@@ -660,7 +823,8 @@ class chain_crf(chain):
         loss_data_cache[0] = loss_prev_data
         loss_mc_cache[0] = loss_prev_mc
         step_cache[0] = False
-        bed_cache[0] = bed_c
+        if ~only_save_last_bed:
+            bed_cache[0] = bed_c
         
         #crf_weight = self.crf_data_weight
 
@@ -690,8 +854,6 @@ class chain_crf(chain):
             bymin = np.max((0,int(indexy-block_size[1]/2)))
             bymax = np.min((bed_c.shape[1],int(indexy+block_size[1]/2)))
             
-            #TODO: Okay this is fine, the problem is more of the boundary of the high velocity region
-
             #find the index of the block side in the coordinate of the block
             mxmin = np.max([block_size[0]-bxmax,0])
             mxmax = np.min([bed_c.shape[0]-bxmin,block_size[0]])
@@ -712,13 +874,13 @@ class chain_crf(chain):
             else:
                 bed_next = np.where(self.grounded_ice_mask, bed_next, bed_c)
                 
-            mc_res = Topography.get_mass_conservation_residual(bed_next, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+            mc_res = Topography.get_mass_conservation_residual(bed_next, self.surf, self.velx, self.vely, self.dhdt, self.smb, resolution)
             data_diff = bed_next - self.cond_bed
             loss_next, loss_next_mc, loss_next_data = self.loss(mc_res,data_diff)
-            #all_loss_next[i] = loss_next
            
             #make sure no bed elevation is greater than surface elevation
             block_thickness = self.surf[bxmin:bxmax,bymin:bymax] - bed_next[bxmin:bxmax,bymin:bymax]
+            
             if self.update_in_region:
                 block_region_mask = self.region_mask[bxmin:bxmax,bymin:bymax]
             else:
@@ -732,7 +894,7 @@ class chain_crf(chain):
             else:
                 acceptance_rate = min(1,np.exp(loss_prev-loss_next))
             
-            u = np.random.rand()
+            u = rng.random()
             if (u <= acceptance_rate):
                 bed_c = bed_next.copy()
                 
@@ -754,33 +916,47 @@ class chain_crf(chain):
                 loss_cache[i] = loss_prev
                 loss_data_cache[i] = loss_prev_data
                 step_cache[i] = False
-
-            bed_cache[i,:,:] = bed_c
             
-            if i%1000 == 0:
-                print(f'i: {i} mc loss: {loss_mc_cache[i]:.3e} data loss: {loss_data_cache[i]:.3e} loss: {loss_cache[i]:.3e} acceptance rate: {np.sum(step_cache[np.max([0,i-1000]):i])/(np.min([i,1000]))}') #to window acceptance rate
+            if ~only_save_last_bed:
+                bed_cache[i,:,:] = bed_c
 
-        return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
+            if i%info_per_iter == 0:
+                print(f'i: {i} mc loss: {loss_mc_cache[i]:.3e} data loss: {loss_data_cache[i]:.3e} loss: {loss_cache[i]:.3e} acceptance rate: {np.sum(step_cache)/(i+1)}')
+                
+        if ~only_save_last_bed:
+            return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
+        else:
+            return bed_c, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
 
 class chain_sgs(chain):
     """
     Inherit the chain class. Used for creating sequential gaussian simulation blocks-based MCMC chains.
+    
+    Parameters in addition to chain's parameters:
+        nst_trans (scikit-learn.preprocessing.QuantileTransformer): The normal score transformation for the (detrended/not detrended) subglacial topography.
+        trend: (numpy.ndarray): A 2D array representing the trend of the subglacial topography
+        detrend_map (bool): If 'True', the subglacial topography will be de-trended using parameter 'trend'. If 'False', the topography will not be de-trended.
+        vario_type (string): The type of variogram model used for SGS ('Gaussian', 'Exponential', 'Spherical', or 'Matern').
+        vario_param (list): A list of parameters defining the variogram model, set by the `set_variogram` method. [azimuth, nugget, major range, minor range, sill, variogram type, smoothness].
+        sgs_param (list): A list of parameters controlling the SGS behavior, set by the `set_sgs_param` method. [number of nearest neighbors, searching radius, randomly drop out conditioning data (True or False), dropout rate]
+        block_min_x, block_max_x, block_min_y, block_max_y (int): the minimum and maximum width and height of the update block
     """ 
     
     def __init_func__(self):
-        print('before running the chain, please set where the block update will be using the object's function set_update_in_region(region_mask) and set_high_vel_region(update_in_region)')
+        print('before running the chain, please set where the block update will be using the object\'s function set_update_in_region(region_mask) and set_update_region(update_in_region)')
         print('please also set up the sgs parameters using set_sgs_param(self, block_size, sgs_param)')
         print('then please set up the loss function using either set_loss_type or set_loss_func')
         
     def set_normal_transformation(self, nst_trans):
         """
         Set the normal score transformation object (from scikit-learn package) used to normalize the bed elevation.
+        The function has no returns. Its effect can be checked in the object's parameter 'nst_trans'
         
         Args:
             nst_trans (QuantileTransformer): A fitted scikit-learn transformer used to normalize input data.
         
         Note:
-            This transformation must be fit beforehand (e.g., via `MCMC.fit_variogram`) and should match the scale of bed values.
+            This transformation must be fit beforehand (e.g., via `MCMC.fit_variogram`).
         """
         self.nst_trans = nst_trans
       
@@ -788,9 +964,10 @@ class chain_sgs(chain):
         """
         Set the long-wavelength trend component of the bed topography.
         Notice that detrend topography means that the SGS simulation will only simulate the short-wavelength topography residuals that is not a part of the trend
+        The function has no returns. Its effect can be checked in the object's parameter 'trend' and 'detrend_map'
         
         Args:
-            trend (2D array): The trend surface to add back after SGS sampling.
+            trend (np.ndarray): A 2D array, representing the topographic trend.
             detrend_map (bool): If True, remove trend before transforming the bed elevation and add it back after inverse transform.
         
         Raises:
@@ -809,6 +986,7 @@ class chain_sgs(chain):
     def set_variogram(self, vario_type, vario_range, vario_sill, vario_nugget, isotropic = True, vario_smoothness = None, vario_azimuth = None):
         """
         Specify variogram model and its parameters for SGS interpolation.
+        The function has no returns. Its effect can be checked in the object's parameter 'vario_type' and 'vario_param'
         
         Args:
             vario_type (str): Variogram model type. One of 'Gaussian', 'Exponential', 'Spherical', 'Matern'.
@@ -847,7 +1025,8 @@ class chain_sgs(chain):
     
     def set_sgs_param(self, sgs_num_nearest_neighbors, sgs_searching_radius, sgs_rand_dropout_on = False, dropout_rate = 0):
         """
-        Set parameters for Sequential Gaussian Simulation (SGS).
+        Set parameters for Sequential Gaussian Simulation (SGS). Details please see implementation of SGS in GStatSim
+        The function has no returns. Its effect can be checked in the object's parameter 'sgs_param
         
         Args:
             sgs_num_nearest_neighbors (int): Number of nearest neighbors used in simulation.
@@ -862,14 +1041,15 @@ class chain_sgs(chain):
             
         self.sgs_param = [sgs_num_nearest_neighbors, sgs_searching_radius, sgs_rand_dropout_on, dropout_rate]
     
-    def set_block_sizes(self, block_min_x, block_min_y, block_max_x, block_max_y):
+    def set_block_sizes(self, block_min_x, block_max_x, block_min_y, block_max_y):
         """
         Set minimum and maximum block sizes (in grid cells) for SGS updates.
+        The function has no returns. Its effect can be checked in the object's parameter 'block_min_x', 'block_max_x', 'block_min_y', 'block_max_y'
         
         Args:
             block_min_x (int): Minimum width of block in x-direction. Unit in grid cells
-            block_min_y (int): Minimum height of block in y-direction.
             block_max_x (int): Maximum width of block in x-direction.
+            block_min_y (int): Minimum height of block in y-direction.
             block_max_y (int): Maximum height of block in y-direction.
         """
         self.block_min_x = block_min_x
@@ -877,26 +1057,34 @@ class chain_sgs(chain):
         self.block_max_x = block_max_x
         self.block_max_y = block_max_y
 
-    def run(self, n_iter, rng='default'):
+    def run(self, n_iter, rng_seed=None, only_save_last_bed=False, info_per_iter=1000):
         """
         Run the MCMC chain using block-based SGS updates
         
         Args:
             n_iter (int): Number of iterations in the MCMC chain.
-            rng (str or np.random.Generator): Random number generator. Default is 'default', which makes a random generator with random seeds
+            rng_seed (None or string): The seed for the NumPy random number generator. If None, a random seed is used.
+            only_save_last_bed: If true, the function will only return one subglacial topography at the end of iterations. If false, the function will return all subglacial topography in every iteration.
+            info_per_iter (int): for every this number of iterations, the information regarding current loss values and acceptance rate will be printed out.
         
         Returns:
-            bed_cache (4D array): Topography at each iteration.
-            loss_mc_cache (1D array): Mass conservation residual loss at each iteration. If the mass conservation loss is not used, return array of 0
-            loss_data_cache (1D array): Data misfit loss at each iteration. If the data misfit loss is not used, return array of 0
-            loss_cache (1D array): Total loss at each iteration.
-            step_cache (1D array): Boolean indicating if the step was accepted.
-            resampled_times (2D array): Number of times each pixel was updated.
-            blocks_cache (2D array): Info on block proposals at each iteration.
+            bed_cache (np.ndarray): A 3D array showing subglacial topography at each iteration, or only the last topography.
+            loss_mc_cache (np.ndarray): A 1D array of mass conservation loss at each iteration. If the mass conservation loss is not used, return array of 0
+            loss_data_cache (np.ndarray): A 1D array of data misfit loss at each iteration. If the data misfit loss is not used, return array of 0
+            loss_cache (np.ndarray): A 1D array of total loss at each iteration.
+            step_cache (np.ndarray): A 1D array of boolean indicating if the step was accepted.
+            resampled_times (np.ndarray): A 2D array of number of times each pixel was updated.
+            blocks_cache (np.ndarray): A 1D array of info on block proposals at each iteration, (x coordinate for the center of the block, y coordinate for the center of the block, block size in x-direction, block size in y-direction).
         """
             
-        if rng == 'default':
+        if rng_seed is None:
             rng = np.random.default_rng()
+        elif isinstance(rng_seed, int):
+            rng = np.random.default_rng(seed=rng_seed)
+        elif isinstance(rng_seed, np.random._generator.Generator):
+            rng = rng_seed
+        else:
+            raise ValueError('Seed should be an integer, a NumPy random Generator, or None')
         
         xmin = np.min(self.xx)
         xmax = np.max(self.xx)
@@ -910,28 +1098,25 @@ class chain_sgs(chain):
         loss_mc_cache = np.zeros(n_iter)
         loss_data_cache = np.zeros(n_iter)
         step_cache = np.zeros(n_iter)
-        bed_cache = np.zeros((n_iter, rows, cols))
+        if ~only_save_last_bed:
+            bed_cache = np.zeros((n_iter, rows, cols))
         blocks_cache = np.full((n_iter, 4), np.nan)
         
-        # TODO, should i have an additional property called initial_bed?
         if self.detrend_map:
-            bed_c = self.bed - self.trend
+            bed_c = self.initial_bed - self.trend
             cond_bed_c = self.cond_bed - self.trend
         else:
-            bed_c = self.bed
+            bed_c = self.initial_bed
             cond_bed_c = self.cond_bed
 
         nst_trans = self.nst_trans
         
-        #if self.detrend_map == True:
-        #    z = nst_trans.transform((bed_c-self.trend).reshape(-1,1))
-        #else:
         z = nst_trans.transform(bed_c.reshape(-1,1))
             
         # Need an additional parameter to store normalized actual conditioning data
         z_cond_bed = nst_trans.transform(cond_bed_c.reshape(-1,1))
         cond_bed_data = np.array([self.xx.flatten(),self.yy.flatten(),z_cond_bed.flatten()])
-        cond_bed_df = pd.DataFrame(cond_bed_data.T, columns=['x','y','cond_bed']) #cond_bed_df should share the same index as psimdf
+        cond_bed_df = pd.DataFrame(cond_bed_data.T, columns=['x','y','cond_bed'])
         
         resolution = self.resolution
     
@@ -941,14 +1126,15 @@ class chain_sgs(chain):
         
         #psimdf['data_mask'] = data_mask.flatten()
         data_index = psimdf[psimdf['data_mask']==1].index
+        
         #psimdf['mc_region_mask'] = mc_region_mask.flatten()
         mask_index = psimdf[psimdf['mc_region_mask']==1].index
         
         # initialize loss
         if self.detrend_map == True:
-            mc_res = Topography.get_mass_conservation_residual(bed_c + self.trend, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+            mc_res = Topography.get_mass_conservation_residual(bed_c + self.trend, self.surf, self.velx, self.vely, self.dhdt, self.smb, resolution)
         else:
-            mc_res = Topography.get_mass_conservation_residual(bed_c, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+            mc_res = Topography.get_mass_conservation_residual(bed_c, self.surf, self.velx, self.vely, self.dhdt, self.smb, resolution)
         
         data_diff = bed_c - cond_bed_c
         loss_prev, loss_prev_mc, loss_prev_data = self.loss(mc_res,data_diff)
@@ -957,11 +1143,11 @@ class chain_sgs(chain):
         loss_mc_cache[0] = loss_prev_mc
         loss_data_cache[0] = loss_prev_data
         step_cache[0] = False
-        bed_cache[0] = bed_c
+        if ~only_save_last_bed:
+            bed_cache[0] = bed_c
         
         for i in range(n_iter):
             
-            # TODO, now by default it will sample in high velocity region
             rsm_center_index = mask_index[rng.integers(low=0, high=len(mask_index))]
             rsm_x_center = psimdf.loc[rsm_center_index,'x']
             rsm_y_center = psimdf.loc[rsm_center_index,'y']
@@ -1013,28 +1199,22 @@ class chain_sgs(chain):
             y = np.flip(np.reshape(Pred_grid_xy_change[:,1], (len(Pred_grid_xy_change[:,1]), 1)))
             Pred_grid_xy_change = np.concatenate((x,y),axis=1)
 
-            # TODO, add seeding Generator into the gs
             if self.vario_param[5] == 'Matern':
                 vario_p = self.vario_param
             else:
                 vario_p = self.vario_param[:6]
-            sim2 = gs.Interpolation.okrige_sgs(Pred_grid_xy_change, new_df, 'x', 'y', 'z', self.sgs_param[0], vario_p, self.sgs_param[1], quiet=True) 
+            sim2 = gs.Interpolation.okrige_sgs(Pred_grid_xy_change, new_df, 'x', 'y', 'z', self.sgs_param[0], vario_p, self.sgs_param[1], quiet=True, seed=rng) 
 
             xy_grid = np.concatenate((Pred_grid_xy_change[:,0].reshape(-1,1),Pred_grid_xy_change[:,1].reshape(-1,1),np.array(sim2).reshape(-1,1)),axis=1)
 
             psimdf_next = psimdf.copy()
             psimdf_next.loc[resampling_box_index,['x','y','z']] = xy_grid
-            #if self.detrend_map == True:
-            #    bed_next = nst_trans.inverse_transform(np.array(psimdf_next['z']).reshape(-1,1)).reshape(rows,cols) + self.trend
-            #else:
             bed_next = nst_trans.inverse_transform(np.array(psimdf_next['z']).reshape(-1,1)).reshape(rows,cols)
             
-            #mc_res = Topography.get_mass_conservation_residual(bed_next, self.surf, self.velx, self.vely, self.dhdt, self.smb)
-            
             if self.detrend_map == True:
-                mc_res = Topography.get_mass_conservation_residual(bed_next + self.trend, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+                mc_res = Topography.get_mass_conservation_residual(bed_next + self.trend, self.surf, self.velx, self.vely, self.dhdt, self.smb, resolution)
             else:
-                mc_res = Topography.get_mass_conservation_residual(bed_next, self.surf, self.velx, self.vely, self.dhdt, self.smb)
+                mc_res = Topography.get_mass_conservation_residual(bed_next, self.surf, self.velx, self.vely, self.dhdt, self.smb, resolution)
             
             data_diff = bed_next - cond_bed_c
             loss_next, loss_next_mc, loss_next_data = self.loss(mc_res,data_diff)
@@ -1054,7 +1234,7 @@ class chain_sgs(chain):
             else:
                 acceptance_rate = min(1,np.exp(loss_prev-loss_next))
 
-            u = np.random.rand()
+            u = rng.random()
             
             if (u <= acceptance_rate):
                 bed_c = bed_next
@@ -1074,15 +1254,24 @@ class chain_sgs(chain):
                 loss_mc_cache[i] = loss_prev_mc
                 loss_data_cache[i] = loss_prev_data
                 step_cache[i] = False
-                
-            if self.detrend_map == True:
-                bed_cache[i,:,:] = bed_c + self.trend
-            else:
-                bed_cache[i,:,:] = bed_c
 
-            if i % 1000 == 0:
+            if ~only_save_last_bed:
+                if self.detrend_map == True:
+                    bed_cache[i,:,:] = bed_c + self.trend
+                else:
+                    bed_cache[i,:,:] = bed_c
+
+            if i % info_per_iter == 0:
                 print(f'i: {i} mc loss: {loss_mc_cache[i]:.3e} loss: {loss_cache[i]:.3e} acceptance rate: {np.sum(step_cache)/(i+1)}')
 
         resampled_times = psimdf.resampled_times.values.reshape((rows,cols))
-                
-        return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
+
+        if self.detrend_map == True:
+            last_bed = bed_c + self.trend
+        else:
+            last_bed = bed_c
+
+        if ~only_save_last_bed:
+            return bed_cache, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache
+        else:
+            return last_bed, loss_mc_cache, loss_data_cache, loss_cache, step_cache, resampled_times, blocks_cache

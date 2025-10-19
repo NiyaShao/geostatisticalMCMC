@@ -4,7 +4,8 @@ __pycache__/
 .ipynb_checkpoints/
 .spyproject
 .virtual_documents
-DenmanDataGridded_csv
+DenmanDataGridded.csv
 sgs_bed.txt
 gstatsMCMC/__pycache__/
 gstatsMCMC/.ipynb_checkpoints/
+*.txt
