@@ -424,6 +424,7 @@ Data descriptors inherited from <a href="gstatsMCMC.MCMC.html#chain">chain</a>:<
 Inherit&nbsp;the&nbsp;<a href="#chain">chain</a>&nbsp;class.&nbsp;Used&nbsp;for&nbsp;creating&nbsp;sequential&nbsp;gaussian&nbsp;simulation&nbsp;blocks-based&nbsp;MCMC&nbsp;chains.<br>
 &nbsp;<br>
 Parameters&nbsp;in&nbsp;addition&nbsp;to&nbsp;<a href="#chain">chain</a>'s&nbsp;parameters:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;do_transform&nbsp;(bool):&nbsp;If&nbsp;true,&nbsp;normalize&nbsp;radar&nbsp;measurements&nbsp;with&nbsp;normal&nbsp;score&nbsp;transformation&nbsp;to&nbsp;generate&nbsp;subglacial&nbsp;topography.&nbsp;If&nbsp;false,&nbsp;directly&nbsp;use&nbsp;Sequential&nbsp;Gaussian&nbsp;Simulation&nbsp;on&nbsp;un-normalized&nbsp;subglacial&nbsp;topography.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;nst_trans&nbsp;(scikit-learn.preprocessing.QuantileTransformer):&nbsp;The&nbsp;normal&nbsp;score&nbsp;transformation&nbsp;for&nbsp;the&nbsp;(detrended/not&nbsp;detrended)&nbsp;subglacial&nbsp;topography.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;trend:&nbsp;(numpy.ndarray):&nbsp;A&nbsp;2D&nbsp;array&nbsp;representing&nbsp;the&nbsp;trend&nbsp;of&nbsp;the&nbsp;subglacial&nbsp;topography<br>
 &nbsp;&nbsp;&nbsp;&nbsp;detrend_map&nbsp;(bool):&nbsp;If&nbsp;'True',&nbsp;the&nbsp;subglacial&nbsp;topography&nbsp;will&nbsp;be&nbsp;de-trended&nbsp;using&nbsp;parameter&nbsp;'trend'.&nbsp;If&nbsp;'False',&nbsp;the&nbsp;topography&nbsp;will&nbsp;not&nbsp;be&nbsp;de-trended.<br>
@@ -469,7 +470,7 @@ Args:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;block_min_y&nbsp;(int):&nbsp;Minimum&nbsp;height&nbsp;of&nbsp;block&nbsp;in&nbsp;y-direction.<br>
 &nbsp;&nbsp;&nbsp;&nbsp;block_max_y&nbsp;(int):&nbsp;Maximum&nbsp;height&nbsp;of&nbsp;block&nbsp;in&nbsp;y-direction.</span></dd></dl>
 
-<dl><dt><a name="chain_sgs-set_normal_transformation"><strong>set_normal_transformation</strong></a>(self, nst_trans)</dt><dd><span class="code">Set&nbsp;the&nbsp;normal&nbsp;score&nbsp;transformation&nbsp;<a href="builtins.html#object">object</a>&nbsp;(from&nbsp;scikit-learn&nbsp;package)&nbsp;used&nbsp;to&nbsp;normalize&nbsp;the&nbsp;bed&nbsp;elevation.<br>
+<dl><dt><a name="chain_sgs-set_normal_transformation"><strong>set_normal_transformation</strong></a>(self, nst_trans, do_transform=True)</dt><dd><span class="code">Set&nbsp;the&nbsp;normal&nbsp;score&nbsp;transformation&nbsp;<a href="builtins.html#object">object</a>&nbsp;(from&nbsp;scikit-learn&nbsp;package)&nbsp;used&nbsp;to&nbsp;normalize&nbsp;the&nbsp;bed&nbsp;elevation.<br>
 The&nbsp;function&nbsp;has&nbsp;no&nbsp;returns.&nbsp;Its&nbsp;effect&nbsp;can&nbsp;be&nbsp;checked&nbsp;in&nbsp;the&nbsp;<a href="builtins.html#object">object</a>'s&nbsp;parameter&nbsp;'nst_trans'<br>
 &nbsp;<br>
 Args:<br>

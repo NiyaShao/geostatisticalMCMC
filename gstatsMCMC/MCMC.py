@@ -933,6 +933,7 @@ class chain_sgs(chain):
     Inherit the chain class. Used for creating sequential gaussian simulation blocks-based MCMC chains.
     
     Parameters in addition to chain's parameters:
+        do_transform (bool): If true, normalize radar measurements with normal score transformation to generate subglacial topography. If false, directly use Sequential Gaussian Simulation on un-normalized subglacial topography.
         nst_trans (scikit-learn.preprocessing.QuantileTransformer): The normal score transformation for the (detrended/not detrended) subglacial topography.
         trend: (numpy.ndarray): A 2D array representing the trend of the subglacial topography
         detrend_map (bool): If 'True', the subglacial topography will be de-trended using parameter 'trend'. If 'False', the topography will not be de-trended.
@@ -947,7 +948,7 @@ class chain_sgs(chain):
         print('please also set up the sgs parameters using set_sgs_param(self, block_size, sgs_param)')
         print('then please set up the loss function using either set_loss_type or set_loss_func')
         
-    def set_normal_transformation(self, nst_trans):
+    def set_normal_transformation(self, nst_trans, do_transform = True):
         """
         Set the normal score transformation object (from scikit-learn package) used to normalize the bed elevation.
         The function has no returns. Its effect can be checked in the object's parameter 'nst_trans'
@@ -958,7 +959,11 @@ class chain_sgs(chain):
         Note:
             This transformation must be fit beforehand (e.g., via `MCMC.fit_variogram`).
         """
-        self.nst_trans = nst_trans
+        self.do_transform = do_transform
+        if do_transform:
+            self.nst_trans = nst_trans
+        else:
+            self.nst_trans = None
       
     def set_trend(self, trend = None, detrend_map = True):
         """
@@ -1109,12 +1114,15 @@ class chain_sgs(chain):
             bed_c = self.initial_bed
             cond_bed_c = self.cond_bed
 
-        nst_trans = self.nst_trans
         
-        z = nst_trans.transform(bed_c.reshape(-1,1))
+        if self.do_transform:
+            nst_trans = self.nst_trans
+            z = nst_trans.transform(bed_c.reshape(-1,1))
+            z_cond_bed = nst_trans.transform(cond_bed_c.reshape(-1,1))
+        else:
+            z = bed_c.reshape(-1,1)
+            z_cond_bed = cond_bed_c.reshape(-1,1)
             
-        # Need an additional parameter to store normalized actual conditioning data
-        z_cond_bed = nst_trans.transform(cond_bed_c.reshape(-1,1))
         cond_bed_data = np.array([self.xx.flatten(),self.yy.flatten(),z_cond_bed.flatten()])
         cond_bed_df = pd.DataFrame(cond_bed_data.T, columns=['x','y','cond_bed'])
         
@@ -1209,7 +1217,10 @@ class chain_sgs(chain):
 
             psimdf_next = psimdf.copy()
             psimdf_next.loc[resampling_box_index,['x','y','z']] = xy_grid
-            bed_next = nst_trans.inverse_transform(np.array(psimdf_next['z']).reshape(-1,1)).reshape(rows,cols)
+            if self.do_transform:
+                bed_next = nst_trans.inverse_transform(np.array(psimdf_next['z']).reshape(-1,1)).reshape(rows,cols)
+            else:
+                bed_next = np.array(psimdf_next['z']).reshape(rows,cols)
             
             if self.detrend_map == True:
                 mc_res = Topography.get_mass_conservation_residual(bed_next + self.trend, self.surf, self.velx, self.vely, self.dhdt, self.smb, resolution)

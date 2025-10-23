@@ -9,3 +9,5 @@ sgs_bed.txt
 gstatsMCMC/__pycache__/
 gstatsMCMC/.ipynb_checkpoints/
 *.txt
+T3_LargeScaleChain_badexample.ipynb
+*.csv
