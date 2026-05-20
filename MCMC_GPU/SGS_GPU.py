@@ -54,8 +54,8 @@ class SGS_MCMC:
             quiet         : suppress print output
         """
         
-        self.xx = xx
-        self.yy = yy
+        self.xx = cp.asarray(xx)
+        self.yy = cp.asarray(yy)
         self.radius = radius
         self.num_points = num_points
         self.ktype = ktype

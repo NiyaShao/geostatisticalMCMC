@@ -159,7 +159,7 @@ def msc_run_wrapper(shared_data, per_chain):
         subsample   = None,
         random_state = rng_seed_base,
     ).fit(data_for_distribution)
-    nst_trans = QuantileTransformer_gpu.NormalScoreTransformGPU(sklearn_qt)
+    nst_trans = QuantileTransformer_gpu.NormalScoreTransformation(sklearn_qt.quantiles_, sklearn_qt.references_)
     
     # 6. Build chain on respective GPU (id)
     chain = MCMC_cu.chain_sgs_gpu(
@@ -330,9 +330,9 @@ if __name__ == '__main__':
     A constaint is that a personal device might run out of memory on large sites b/c of all of the .copy()
     """
     # FILE PATHS 
-    glacier_data_path = Path(r'./data/Supprt_Force.csv')
+    glacier_data_path = Path(r'./data/BindSchadler_Macayeal_IceStreams.csv')
     seed_file_path    = Path(r'./data/200_seeds.txt')
-    output_path       = Path(r'./data/support_force')
+    output_path       = Path(r'./data/bindshadler_macayeal')
     
     # Number of SmallScaleChains per LargeScaleChain
     n_ssc_per_lsc = 10
@@ -340,7 +340,7 @@ if __name__ == '__main__':
     sigma_mc = 1.5
 
     # Total iterations per chain
-    n_iter = 10000
+    n_iter = 1000
     
     lsc_starting_idx = 0
     lsc_ending_idx   = 10
