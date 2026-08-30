@@ -9,3 +9,5 @@ gstatsMCMC/.ipynb_checkpoints/
 *.txt
 *.csv
 .gitignore
+.DS_Store
+environment_backup.yml
